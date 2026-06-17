@@ -1,0 +1,13 @@
+.next/
+node_modules/
+out/
+dist/
+.env
+.env*.local
+*.log
+pnpm-debug.log*
+coverage/
+.vercel/
+Thumbs.db
+.DS_Store
+
