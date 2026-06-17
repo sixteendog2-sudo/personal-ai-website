@@ -1,4 +1,5 @@
 import { knowledgeItems } from "./mock-data";
+import { getRuntimeKnowledgeItems } from "./runtime-store";
 import type { Citation, KnowledgeItem, Topic } from "./types";
 
 const topicHints: Record<Topic, string[]> = {
@@ -61,7 +62,7 @@ export function searchKnowledge({
   relatedRecordId?: string;
   scope?: "visitor" | "admin";
 }) {
-  return knowledgeItems
+  return [...getRuntimeKnowledgeItems(), ...knowledgeItems]
     .filter((item) => item.status === "published")
     .filter((item) => item.isAiUsable)
     .filter((item) => (scope === "visitor" ? item.visibility === "public" : true))
@@ -88,4 +89,3 @@ export function buildKnowledgeContext(items: KnowledgeItem[]) {
     })
     .join("\n\n");
 }
-

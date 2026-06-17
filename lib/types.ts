@@ -106,6 +106,6 @@ export interface VisitorQuestion {
   topic: Topic;
   status: "new" | "valuable" | "converted" | "ignored";
   citations: Citation[];
+  convertedKnowledgeItemId?: string;
   createdAt: string;
 }
-

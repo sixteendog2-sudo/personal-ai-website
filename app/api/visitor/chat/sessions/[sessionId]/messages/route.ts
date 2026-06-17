@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateAiAnswer } from "@/lib/ai";
-import { addChatMessage, addVisitorQuestion, getChatSession } from "@/lib/runtime-store";
+import { addChatMessage, addVisitorQuestion, ensureChatSession } from "@/lib/runtime-store";
 import type { Topic } from "@/lib/types";
 
 function normalizeTopic(topic: unknown): Topic {
@@ -12,12 +12,6 @@ function normalizeTopic(topic: unknown): Topic {
 
 export async function POST(request: Request, { params }: { params: Promise<{ sessionId: string }> }) {
   const { sessionId } = await params;
-  const session = getChatSession(sessionId);
-
-  if (!session) {
-    return NextResponse.json({ error: "Session not found" }, { status: 404 });
-  }
-
   const body = (await request.json().catch(() => ({}))) as {
     message?: string;
     context?: {
@@ -35,12 +29,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ ses
     return NextResponse.json({ error: "Message is too long" }, { status: 400 });
   }
 
+  const topic = normalizeTopic(body.context?.topic);
+  const session = ensureChatSession({
+    sessionId,
+    topic,
+    entry: "message-endpoint",
+    relatedRecordId: body.context?.relatedRecordId
+  });
+
   addChatMessage(session.id, {
     role: "user",
     content: message
   });
 
-  const topic = normalizeTopic(body.context?.topic ?? session.topic);
   const ai = await generateAiAnswer({
     message,
     topic,

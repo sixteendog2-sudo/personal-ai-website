@@ -4,7 +4,7 @@
 
 本地仓库已经可以作为 GitHub/Vercel 项目使用。
 
-当前 GitHub App 连接未返回可写安装账户或仓库，因此本环境暂时无法直接创建远程 GitHub repository。
+当前 GitHub App 已能识别登录账号 `sixteendog2-sudo`，但未返回可写安装账户或仓库；本地也没有 `gh` CLI、`GITHUB_TOKEN` 或 `GH_TOKEN`，因此本环境暂时无法直接创建远程 GitHub repository。
 
 ## 2. 创建 GitHub 仓库
 
@@ -50,6 +50,16 @@ pnpm build
 
 7. Output Directory 留空。
 
+项目已包含 `vercel.json`：
+
+```json
+{
+  "framework": "nextjs",
+  "installCommand": "pnpm install",
+  "buildCommand": "pnpm build"
+}
+```
+
 ## 4. 环境变量
 
 MVP demo 不配置环境变量也能运行本地模拟 AI。
@@ -83,4 +93,3 @@ http://localhost:3000
 http://localhost:3000/chat
 http://localhost:3000/admin
 ```
-
