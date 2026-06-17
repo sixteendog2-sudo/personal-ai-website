@@ -9,6 +9,7 @@
 - API：公开内容接口、访客聊天接口、管理端数据接口。
 - 知识库：本地 mock RAG 检索，按 `visibility + status + isAiUsable` 隔离数据。
 - DeepSeek：预留真实调用，未配置 key 时自动使用本地模拟回答。
+- 管理员保护：`/admin` 和 `/api/admin/*` 默认需要登录，demo 密码为 `demo123456`。
 - 设计文档：`docs/`。
 - 数据库草案：`db/schema.sql`。
 
@@ -34,6 +35,8 @@ pnpm dev
 DEEPSEEK_API_KEY=
 DEEPSEEK_BASE_URL=https://api.deepseek.com
 DEEPSEEK_CHAT_MODEL=deepseek-v4-flash
+ADMIN_PASSWORD=demo123456
+ADMIN_SESSION_TOKEN=replace-with-a-long-random-secret
 DATABASE_URL=
 ```
 
@@ -51,4 +54,3 @@ DATABASE_URL=
 - 接入真实对象存储。
 - 接入真实管理员认证。
 - 使用后台操作沉淀访客问题到知识库。
-

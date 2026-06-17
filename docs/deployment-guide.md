@@ -72,6 +72,13 @@ DEEPSEEK_BASE_URL=https://api.deepseek.com
 DEEPSEEK_CHAT_MODEL=deepseek-v4-flash
 ```
 
+后台登录保护：
+
+```text
+ADMIN_PASSWORD=设置一个强密码
+ADMIN_SESSION_TOKEN=设置一个长随机字符串
+```
+
 接入数据库时配置：
 
 ```text

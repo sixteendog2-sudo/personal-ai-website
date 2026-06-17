@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { cookies } from "next/headers";
 import {
   BookOpen,
   Brain,
@@ -12,6 +13,7 @@ import {
   Sparkles,
   UserRound
 } from "lucide-react";
+import { ADMIN_COOKIE_NAME, getAdminSessionToken } from "@/lib/auth";
 
 const nav = [
   { href: "/admin", label: "后台首页", icon: Home },
@@ -26,7 +28,14 @@ const nav = [
   { href: "/admin/settings/prompt", label: "提示词配置", icon: Sparkles }
 ];
 
-export default function AdminLayout({ children }: { children: ReactNode }) {
+export default async function AdminLayout({ children }: { children: ReactNode }) {
+  const cookieStore = await cookies();
+  const authenticated = cookieStore.get(ADMIN_COOKIE_NAME)?.value === getAdminSessionToken();
+
+  if (!authenticated) {
+    return children;
+  }
+
   return (
     <div className="admin-layout">
       <aside className="admin-sidebar">
@@ -45,9 +54,13 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
+        <form action="/api/admin/auth/logout" method="post" style={{ marginTop: 20 }}>
+          <button className="button ghost" type="submit" style={{ width: "100%" }}>
+            退出登录
+          </button>
+        </form>
       </aside>
       <main className="admin-main">{children}</main>
     </div>
   );
 }
-
