@@ -9,6 +9,7 @@ pnpm-debug.log*
 coverage/
 *.tsbuildinfo
 storage/
+backups/
 .vercel/
 Thumbs.db
 .DS_Store

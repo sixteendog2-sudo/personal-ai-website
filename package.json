@@ -16,7 +16,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/db-migrate.ts",
     "db:seed": "tsx scripts/db-seed.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:backup:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/db-backup-windows.ps1"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1070.0",
