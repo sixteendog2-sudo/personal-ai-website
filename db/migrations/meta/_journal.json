@@ -22,6 +22,13 @@
       "when": 1781747475589,
       "tag": "0002_violet_ted_forrester",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1781748631888,
+      "tag": "0003_enable_pg_trgm",
+      "breakpoints": true
     }
   ]
 }

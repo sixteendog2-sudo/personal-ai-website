@@ -1,4 +1,4 @@
-import { listKnowledgeItems } from "./knowledge-store";
+import { searchKnowledgeCandidates } from "./knowledge-store";
 import type { Citation, KnowledgeItem, Topic } from "./types";
 
 const topicHints: Record<Topic, string[]> = {
@@ -61,7 +61,7 @@ export async function searchKnowledge({
   relatedRecordId?: string;
   scope?: "visitor" | "admin";
 }) {
-  const items = await listKnowledgeItems();
+  const items = await searchKnowledgeCandidates(query, scope);
   return items
     .filter((item) => item.status === "published")
     .filter((item) => item.isAiUsable)

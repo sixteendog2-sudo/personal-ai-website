@@ -52,9 +52,11 @@ Route Handler 负责 HTTP 解析和响应；store 负责查询与事务；AI 层
 4. 执行 `pnpm db:migrate`。
 5. 执行 `pnpm db:seed` 创建租户、管理员、示例内容与知识。
 
-## pgvector 演进
+## 检索与 pgvector 演进
 
-Windows 原生 PostgreSQL 安装默认不包含 pgvector。当前 `knowledge_chunks.embedding` 保留兼容字段，检索采用受权限约束的关键词相关度，确保业务先可运行。
+当前生产主路径启用 PostgreSQL `pg_trgm`：数据库内先执行租户、发布状态、可见性与 AI 可用性过滤，再按标题、正文、分类和标签相似度选择候选，应用层进行场景重排。迁移同时创建 3 个 GIN trigram 索引。
+
+Windows 原生 PostgreSQL 安装默认不包含 pgvector。Visual Studio C++ Build Tools 已是本机唯一额外编译依赖，管理员可运行 `scripts/install-pgvector-windows.ps1` 按 pgvector 官方 Windows 流程安装扩展。当前机器尚未完成需要 UAC 的最终文件复制，因此不得声称向量检索已经启用。
 
 生产启用向量检索时应独立提交迁移：安装 `vector` 扩展、创建固定维度 `vector(n)` 列、建立 HNSW 索引、记录 embedding 模型与维度，并采用“关键词 + 向量 + 关联记录加权”的混合检索。扩展迁移必须在目标数据库验证后再发布。
 

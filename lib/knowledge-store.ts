@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { getDatabase, isDatabaseConfigured } from "@/db/client";
 import { knowledgeItems as knowledgeTable, visitorQuestions } from "@/db/schema";
 import { knowledgeItems as mockKnowledge } from "@/lib/mock-data";
@@ -40,6 +40,27 @@ export async function listKnowledgeItems() {
   const rows = await getDatabase().select().from(knowledgeTable)
     .where(eq(knowledgeTable.ownerId, DEFAULT_OWNER_ID))
     .orderBy(desc(knowledgeTable.createdAt));
+  return rows.map(mapKnowledge);
+}
+
+export async function searchKnowledgeCandidates(query: string, scope: "visitor" | "admin") {
+  if (!isDatabaseConfigured()) return [...memory.getRuntimeKnowledgeItems(), ...mockKnowledge];
+  const similarity = sql<number>`greatest(
+    similarity(${knowledgeTable.title}, ${query}),
+    similarity(${knowledgeTable.category}, ${query}),
+    similarity(${knowledgeTable.body}, ${query}),
+    similarity(array_to_string(${knowledgeTable.tags}, ' '), ${query})
+  )`;
+  const conditions = [
+    eq(knowledgeTable.ownerId, DEFAULT_OWNER_ID),
+    eq(knowledgeTable.status, "published"),
+    eq(knowledgeTable.isAiUsable, true)
+  ];
+  if (scope === "visitor") conditions.push(eq(knowledgeTable.visibility, "public"));
+  const rows = await getDatabase().select().from(knowledgeTable)
+    .where(and(...conditions))
+    .orderBy(desc(similarity), desc(knowledgeTable.updatedAt))
+    .limit(50);
   return rows.map(mapKnowledge);
 }
 
