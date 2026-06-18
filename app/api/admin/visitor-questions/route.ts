@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getVisitorQuestions } from "@/lib/runtime-store";
+import { listVisitorQuestions } from "@/lib/knowledge-store";
 
 const fallbackQuestions = [
   {
@@ -23,9 +23,8 @@ const fallbackQuestions = [
 ];
 
 export async function GET() {
-  const questions = getVisitorQuestions();
+  const questions = await listVisitorQuestions();
   return NextResponse.json({
     items: questions.length ? questions : fallbackQuestions
   });
 }
-

@@ -1,5 +1,4 @@
-import { knowledgeItems } from "./mock-data";
-import { getRuntimeKnowledgeItems } from "./runtime-store";
+import { listKnowledgeItems } from "./knowledge-store";
 import type { Citation, KnowledgeItem, Topic } from "./types";
 
 const topicHints: Record<Topic, string[]> = {
@@ -51,7 +50,7 @@ function scoreItem(item: KnowledgeItem, query: string, topic: Topic, relatedReco
   return score;
 }
 
-export function searchKnowledge({
+export async function searchKnowledge({
   query,
   topic = "default",
   relatedRecordId,
@@ -62,7 +61,8 @@ export function searchKnowledge({
   relatedRecordId?: string;
   scope?: "visitor" | "admin";
 }) {
-  return [...getRuntimeKnowledgeItems(), ...knowledgeItems]
+  const items = await listKnowledgeItems();
+  return items
     .filter((item) => item.status === "published")
     .filter((item) => item.isAiUsable)
     .filter((item) => (scope === "visitor" ? item.visibility === "public" : true))

@@ -56,7 +56,7 @@ export async function generateAiAnswer({
   relatedRecordId?: string;
   history?: ChatMessage[];
 }) {
-  const retrieved = searchKnowledge({
+  const retrieved = await searchKnowledge({
     query: message,
     topic,
     relatedRecordId,
@@ -127,4 +127,3 @@ export async function generateAiAnswer({
     };
   }
 }
-
