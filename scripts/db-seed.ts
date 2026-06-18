@@ -1,12 +1,13 @@
 import { loadEnvConfig } from "@next/env";
 import { and, eq } from "drizzle-orm";
 import { hash } from "bcryptjs";
+import { chunkKnowledgeText, estimateTokenCount } from "../lib/knowledge-chunks";
 
 const DEFAULT_OWNER_ID = "00000000-0000-4000-8000-000000000001";
 
 async function main() {
   loadEnvConfig(process.cwd());
-  const [{ getDatabase }, { adminUsers, contentItems, knowledgeItems: knowledgeTable, modelSettings, ownerProfiles, owners, promptTemplates }, mock] = await Promise.all([
+  const [{ getDatabase }, { adminUsers, contentItems, knowledgeChunks, knowledgeItems: knowledgeTable, modelSettings, ownerProfiles, owners, promptTemplates }, mock] = await Promise.all([
     import("../db/client"),
     import("../db/schema"),
     import("../lib/mock-data")
@@ -113,6 +114,19 @@ async function main() {
       visibility: item.visibility,
       isAiUsable: item.isAiUsable
     })));
+  }
+
+  const storedKnowledge = await db.select({ id: knowledgeTable.id, body: knowledgeTable.body }).from(knowledgeTable)
+    .where(eq(knowledgeTable.ownerId, DEFAULT_OWNER_ID));
+  for (const item of storedKnowledge) {
+    const existingChunk = await db.select({ id: knowledgeChunks.id }).from(knowledgeChunks)
+      .where(eq(knowledgeChunks.knowledgeItemId, item.id)).limit(1);
+    if (existingChunk.length === 0) {
+      const chunks = chunkKnowledgeText(item.body);
+      await db.insert(knowledgeChunks).values(chunks.map((content, chunkIndex) => ({
+        knowledgeItemId: item.id, chunkIndex, content, tokenCount: estimateTokenCount(content)
+      })));
+    }
   }
 
   console.log(`Seed complete for owner ${DEFAULT_OWNER_ID}.`);

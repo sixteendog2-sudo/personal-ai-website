@@ -1,13 +1,14 @@
-import { NextResponse } from "next/server";
-import { convertQuestionToKnowledge } from "@/lib/knowledge-store";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { convertQuestionToAdminKnowledge } from "@/lib/admin-knowledge-store";
+import { getAdminRequestSession } from "@/lib/api-auth";
+import { getRequestIpHash } from "@/lib/request-context";
 
-export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const knowledge = await convertQuestionToKnowledge(id);
-
-  if (!knowledge) {
-    return NextResponse.json({ error: "Question not found or demo fallback cannot be converted" }, { status: 404 });
-  }
-
-  return NextResponse.json({ item: knowledge });
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getAdminRequestSession(request);
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const id = z.uuid().safeParse((await params).id);
+  if (!id.success) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+  const knowledge = await convertQuestionToAdminKnowledge({ ...session, ipHash: getRequestIpHash(request) }, id.data);
+  return knowledge ? NextResponse.json({ item: knowledge }) : NextResponse.json({ error: "Question not found" }, { status: 404 });
 }
