@@ -346,19 +346,32 @@ select {
 }
 
 .feed-grid {
-  columns: 3 250px;
-  column-gap: 18px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  align-items: stretch;
 }
 
 .feed-card {
-  display: inline-block;
-  width: 100%;
-  break-inside: avoid;
-  margin: 0 0 18px;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
 }
 
 .feed-card .photo {
-  min-height: var(--h, 230px);
+  min-height: 0;
+  aspect-ratio: 4 / 3;
+}
+
+.feed-card .card-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.feed-card .chips {
+  margin-top: auto;
+  padding-top: 14px;
 }
 
 .page-title {
@@ -575,12 +588,31 @@ select {
 }
 
 @media (max-width: 880px) {
-  .site-nav-inner,
-  .nav-links,
-  .nav-actions,
   .section-heading {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .site-nav-inner {
+    flex-wrap: wrap;
+    padding: 12px 0;
+  }
+
+  .nav-links {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    padding: 4px 0;
+    white-space: nowrap;
+    scrollbar-width: none;
+  }
+
+  .nav-links::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-actions {
+    margin-left: auto;
   }
 
   .hero,
@@ -607,5 +639,22 @@ select {
   .bubble {
     max-width: 92%;
   }
+
+  .feed-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
+@media (max-width: 580px) {
+  .brand {
+    width: 100%;
+  }
+
+  .nav-actions {
+    margin-left: 0;
+  }
+
+  .feed-grid {
+    grid-template-columns: 1fr;
+  }
+}

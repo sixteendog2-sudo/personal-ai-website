@@ -35,12 +35,11 @@ export default function LifePage() {
           <span className="chip">灵感</span>
         </div>
         <div className="feed-grid">
-          {records.map((record, index) => (
-            <LifeRecordCard key={record.id} record={record} tall={index % 2 === 1} />
+          {records.map((record) => (
+            <LifeRecordCard key={record.id} record={record} />
           ))}
         </div>
       </section>
     </main>
   );
 }
-

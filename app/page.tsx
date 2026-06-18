@@ -63,8 +63,8 @@ export default function HomePage() {
           }
         />
         <div className="feed-grid">
-          {publicLife.slice(0, 3).map((record, index) => (
-            <LifeRecordCard key={record.id} record={record} tall={index === 1} />
+          {publicLife.slice(0, 3).map((record) => (
+            <LifeRecordCard key={record.id} record={record} />
           ))}
         </div>
       </section>
@@ -107,4 +107,3 @@ export default function HomePage() {
     </main>
   );
 }
-

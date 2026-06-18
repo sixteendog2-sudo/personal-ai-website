@@ -1,10 +1,9 @@
 import Link from "next/link";
-import type { CSSProperties } from "react";
 import type { LifeRecord, StudyItem, WorkProject } from "@/lib/types";
 
-export function LifeRecordCard({ record, tall = false }: { record: LifeRecord; tall?: boolean }) {
+export function LifeRecordCard({ record }: { record: LifeRecord }) {
   return (
-    <article className="card feed-card" style={{ "--h": tall ? "310px" : "230px" } as CSSProperties}>
+    <article className="card feed-card">
       <Link href={`/life/${record.id}`} aria-label={record.title}>
         <div className={`photo ${record.imageTone}`} />
       </Link>
