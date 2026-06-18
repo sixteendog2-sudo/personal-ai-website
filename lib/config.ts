@@ -5,6 +5,13 @@ const serverEnvSchema = z.object({
   DATABASE_URL: z.string().url().optional(),
   DATABASE_MAX_CONNECTIONS: z.coerce.number().int().min(1).max(50).default(10),
   DATABASE_SSL: z.enum(["true", "false"]).default("false"),
+  STORAGE_DRIVER: z.enum(["local", "s3"]).default("local"),
+  S3_REGION: z.string().optional(),
+  S3_BUCKET: z.string().optional(),
+  S3_ENDPOINT: z.string().url().optional(),
+  S3_ACCESS_KEY_ID: z.string().optional(),
+  S3_SECRET_ACCESS_KEY: z.string().optional(),
+  S3_FORCE_PATH_STYLE: z.enum(["true", "false"]).default("false"),
   DEEPSEEK_API_KEY: z.string().min(1).optional(),
   DEEPSEEK_BASE_URL: z.string().url().default("https://api.deepseek.com"),
   DEEPSEEK_CHAT_MODEL: z.string().min(1).default("deepseek-v4-flash"),
@@ -32,5 +39,8 @@ export function assertProductionConfig() {
 
   if (missing.length > 0) {
     throw new Error(`Missing production configuration: ${missing.join(", ")}`);
+  }
+  if (env.STORAGE_DRIVER === "s3" && (!env.S3_REGION || !env.S3_BUCKET || !env.S3_ACCESS_KEY_ID || !env.S3_SECRET_ACCESS_KEY)) {
+    throw new Error("S3 storage requires region, bucket and credentials");
   }
 }

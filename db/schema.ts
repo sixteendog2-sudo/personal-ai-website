@@ -73,8 +73,14 @@ export const mediaAssets = pgTable("media_assets", {
   width: integer("width"),
   height: integer("height"),
   altText: text("alt_text"),
+  checksumSha256: varchar("checksum_sha256", { length: 64 }).notNull(),
+  variant: varchar("variant", { length: 32 }).notNull().default("original"),
+  parentAssetId: uuid("parent_asset_id"),
   ...timestamps
-}, (table) => [uniqueIndex("media_assets_storage_key_uidx").on(table.storageKey)]);
+}, (table) => [
+  uniqueIndex("media_assets_storage_key_uidx").on(table.storageKey),
+  index("media_assets_owner_parent_idx").on(table.ownerId, table.parentAssetId)
+]);
 
 export const contentMedia = pgTable("content_media", {
   contentId: uuid("content_id").notNull().references(() => contentItems.id, { onDelete: "cascade" }),

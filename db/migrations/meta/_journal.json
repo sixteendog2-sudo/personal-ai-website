@@ -15,6 +15,13 @@
       "when": 1781746313870,
       "tag": "0001_amazing_black_cat",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781747475589,
+      "tag": "0002_violet_ted_forrester",
+      "breakpoints": true
     }
   ]
 }
