@@ -1,7 +1,7 @@
-import { getChatSessions } from "@/lib/runtime-store";
+import { listChatSessions } from "@/lib/chat-store";
 
-export default function AdminChatLogsPage() {
-  const sessions = getChatSessions();
+export default async function AdminChatLogsPage() {
+  const sessions = await listChatSessions();
 
   return (
     <>
@@ -40,4 +40,3 @@ export default function AdminChatLogsPage() {
     </>
   );
 }
-

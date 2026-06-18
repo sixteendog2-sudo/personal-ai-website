@@ -1,15 +1,14 @@
 import Link from "next/link";
-import { knowledgeItems, lifeRecords, studyItems, workProjects } from "@/lib/mock-data";
-import { getVisitorQuestions } from "@/lib/runtime-store";
+import { getDashboardMetrics } from "@/lib/dashboard-store";
 
-export default function AdminDashboardPage() {
-  const questions = getVisitorQuestions();
+export default async function AdminDashboardPage() {
+  const dashboard = await getDashboardMetrics();
   const metrics = [
-    ["知识条目", knowledgeItems.filter((item) => item.isAiUsable).length, "teal"],
-    ["生活记录", lifeRecords.length, "cyan"],
-    ["学习档案", studyItems.length, "lime"],
-    ["工作项目", workProjects.length, "coral"],
-    ["待整理问题", questions.filter((item) => item.status === "new").length, "coral"]
+    ["知识条目", dashboard.aiUsableKnowledge, "teal"],
+    ["生活记录", dashboard.lifeRecords, "cyan"],
+    ["学习档案", dashboard.studyItems, "lime"],
+    ["工作项目", dashboard.workProjects, "coral"],
+    ["待整理问题", dashboard.pendingQuestions, "coral"]
   ];
 
   return (
@@ -57,4 +56,3 @@ export default function AdminDashboardPage() {
     </>
   );
 }
-

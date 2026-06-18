@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm";
+import { asc, desc, eq, inArray } from "drizzle-orm";
 import { getDatabase, isDatabaseConfigured } from "@/db/client";
 import { chatMessages, chatSessions, visitorQuestions } from "@/db/schema";
 import * as memory from "@/lib/runtime-store";
@@ -110,4 +110,20 @@ export async function addVisitorQuestion(input: {
     convertedKnowledgeItemId: created.convertedKnowledgeItemId ?? undefined,
     createdAt: created.createdAt.toISOString()
   };
+}
+
+export async function listChatSessions() {
+  if (!isDatabaseConfigured()) return memory.getChatSessions();
+  const db = getDatabase();
+  const sessions = await db.select().from(chatSessions).where(eq(chatSessions.ownerId, DEFAULT_OWNER_ID)).orderBy(desc(chatSessions.createdAt));
+  if (sessions.length === 0) return [];
+  const messages = await db.select().from(chatMessages)
+    .where(inArray(chatMessages.sessionId, sessions.map((session) => session.id)))
+    .orderBy(asc(chatMessages.createdAt));
+  return sessions.map((session) => ({
+    id: session.id, visitorId: session.visitorId, topic: session.topic as Topic, entry: session.entry,
+    relatedRecordId: session.relatedRecordId ?? undefined,
+    messages: messages.filter((message) => message.sessionId === session.id && message.role !== "system").map(mapMessage),
+    createdAt: session.createdAt.toISOString()
+  }));
 }
