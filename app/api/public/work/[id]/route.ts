@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { workProjects } from "@/lib/mock-data";
+import { getWorkProject } from "@/lib/content-store";
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const item = workProjects.find((project) => project.id === id && project.visibility === "public" && project.status === "published");
+  const item = await getWorkProject(id);
 
   if (!item) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });

@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import { studyItems } from "@/lib/mock-data";
+import { listStudyItems } from "@/lib/content-store";
 
 export async function GET() {
   return NextResponse.json({
-    items: studyItems.filter((item) => item.visibility === "public" && item.status === "published")
+    items: await listStudyItems()
   });
 }
-

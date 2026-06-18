@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
-import { lifeRecords, profile, studyItems, workProjects } from "@/lib/mock-data";
+import { profile } from "@/lib/mock-data";
+import { listLifeRecords, listStudyItems, listWorkProjects } from "@/lib/content-store";
 
 export async function GET() {
+  const [lifeRecords, studyItems, workProjects] = await Promise.all([listLifeRecords(), listStudyItems(), listWorkProjects()]);
   return NextResponse.json({
     profile,
-    lifeRecords: lifeRecords.filter((item) => item.visibility === "public" && item.status === "published"),
-    studyItems: studyItems.filter((item) => item.visibility === "public" && item.status === "published"),
-    workProjects: workProjects.filter((item) => item.visibility === "public" && item.status === "published"),
+    lifeRecords,
+    studyItems,
+    workProjects,
     suggestedQuestions: ["你是谁？", "介绍一下你的项目经历", "你适合什么研究方向？", "平时有什么兴趣？"]
   });
 }
-
