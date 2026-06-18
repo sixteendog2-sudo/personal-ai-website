@@ -1,16 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Bot, BriefcaseBusiness } from "lucide-react";
+import { MarkdownContent } from "@/components/MarkdownContent";
 import { SiteNav } from "@/components/SiteNav";
-import { workProjects } from "@/lib/mock-data";
+import { getWorkProject } from "@/lib/content-store";
 
-export function generateStaticParams() {
-  return workProjects.map((project) => ({ id: project.id }));
-}
+export const dynamic = "force-dynamic";
 
 export default async function WorkDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const project = workProjects.find((item) => item.id === id && item.visibility === "public" && item.status === "published");
+  const project = await getWorkProject(id);
 
   if (!project) {
     notFound();
@@ -51,7 +50,7 @@ export default async function WorkDetailPage({ params }: { params: Promise<{ id:
         <div className="card">
           <div className="card-body">
             <h2>项目说明</h2>
-            <p className="prose">{project.body}</p>
+            <MarkdownContent content={project.body} />
           </div>
         </div>
       </section>

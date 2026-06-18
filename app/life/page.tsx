@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { Bot } from "lucide-react";
-import { LifeRecordCard } from "@/components/Cards";
+import { InfiniteContentGrid } from "@/components/InfiniteContentGrid";
 import { SectionHeading } from "@/components/SectionHeading";
 import { SiteNav } from "@/components/SiteNav";
-import { lifeRecords } from "@/lib/mock-data";
+import { listLifeRecordsPage } from "@/lib/content-store";
 
-export default function LifePage() {
-  const records = lifeRecords.filter((item) => item.visibility === "public" && item.status === "published");
+export const dynamic = "force-dynamic";
+
+export default async function LifePage() {
+  const page = await listLifeRecordsPage();
 
   return (
     <main className="page">
@@ -34,11 +36,12 @@ export default function LifePage() {
           <span className="chip lime">成长</span>
           <span className="chip">灵感</span>
         </div>
-        <div className="feed-grid">
-          {records.map((record) => (
-            <LifeRecordCard key={record.id} record={record} />
-          ))}
-        </div>
+        <InfiniteContentGrid
+          type="life"
+          initialItems={page.items}
+          initialCursor={page.nextCursor}
+          initialHasMore={page.hasMore}
+        />
       </section>
     </main>
   );

@@ -275,6 +275,17 @@ select {
   overflow: hidden;
 }
 
+.card-link {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+}
+
+.card-link:focus-visible {
+  outline: 3px solid rgba(0, 168, 138, 0.28);
+  outline-offset: -3px;
+}
+
 .card-body {
   padding: 18px;
 }
@@ -367,6 +378,51 @@ select {
   display: flex;
   flex: 1;
   flex-direction: column;
+}
+
+.load-more-state {
+  display: grid;
+  min-height: 72px;
+  place-items: center;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.markdown-content {
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.9;
+}
+
+.markdown-content > :first-child {
+  margin-top: 0;
+}
+
+.markdown-content > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4 {
+  color: var(--ink);
+  line-height: 1.35;
+}
+
+.markdown-content blockquote {
+  margin: 18px 0;
+  border-left: 3px solid var(--teal);
+  padding: 4px 0 4px 16px;
+  color: var(--teal-dark);
+}
+
+.markdown-content pre {
+  overflow-x: auto;
+  border-radius: var(--radius);
+  background: var(--ink);
+  padding: 16px;
+  color: white;
+  line-height: 1.6;
 }
 
 .feed-card .chips {
@@ -587,6 +643,53 @@ select {
   min-height: 130px;
 }
 
+.document-upload {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(220px, auto);
+  gap: 14px;
+  align-items: center;
+  border: 1px dashed var(--teal);
+  border-radius: var(--radius);
+  background: var(--teal-soft);
+  padding: 16px;
+  color: var(--teal-dark);
+}
+
+.document-upload p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.document-upload input {
+  min-width: 0;
+}
+
+.check-field {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 16px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.admin-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.form-message {
+  color: var(--teal-dark);
+  font-size: 14px;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
 @media (max-width: 880px) {
   .section-heading {
     align-items: flex-start;
@@ -642,6 +745,14 @@ select {
 
   .feed-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .document-upload {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .document-upload input {
+    grid-column: 1 / -1;
   }
 }
 

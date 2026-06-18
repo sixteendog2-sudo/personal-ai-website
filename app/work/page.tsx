@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { Bot } from "lucide-react";
-import { WorkProjectCard } from "@/components/Cards";
+import { InfiniteContentGrid } from "@/components/InfiniteContentGrid";
 import { SectionHeading } from "@/components/SectionHeading";
 import { SiteNav } from "@/components/SiteNav";
-import { workProjects } from "@/lib/mock-data";
+import { listWorkProjectsPage } from "@/lib/content-store";
 
-export default function WorkPage() {
+export const dynamic = "force-dynamic";
+
+export default async function WorkPage() {
+  const page = await listWorkProjectsPage();
   return (
     <main className="page">
       <SiteNav />
@@ -25,13 +28,13 @@ export default function WorkPage() {
             </Link>
           }
         />
-        <div className="grid two">
-          {workProjects.map((project) => (
-            <WorkProjectCard key={project.id} project={project} />
-          ))}
-        </div>
+        <InfiniteContentGrid
+          type="work"
+          initialItems={page.items}
+          initialCursor={page.nextCursor}
+          initialHasMore={page.hasMore}
+        />
       </section>
     </main>
   );
 }
-

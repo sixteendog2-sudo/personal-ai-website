@@ -1,22 +1,21 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Bot, CalendarDays, MapPin } from "lucide-react";
+import { MarkdownContent } from "@/components/MarkdownContent";
 import { SiteNav } from "@/components/SiteNav";
-import { lifeRecords } from "@/lib/mock-data";
+import { getLifeRecord, listLifeRecordsPage } from "@/lib/content-store";
 
-export function generateStaticParams() {
-  return lifeRecords.map((record) => ({ id: record.id }));
-}
+export const dynamic = "force-dynamic";
 
 export default async function LifeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const record = lifeRecords.find((item) => item.id === id && item.visibility === "public" && item.status === "published");
+  const record = await getLifeRecord(id);
 
   if (!record) {
     notFound();
   }
 
-  const related = lifeRecords.filter((item) => item.id !== record.id && item.visibility === "public").slice(0, 2);
+  const related = (await listLifeRecordsPage({ limit: 3 })).items.filter((item) => item.id !== record.id).slice(0, 2);
 
   return (
     <main className="page">
@@ -47,7 +46,7 @@ export default async function LifeDetailPage({ params }: { params: Promise<{ id:
                 </span>
               ))}
             </div>
-            <p className="prose" style={{ marginTop: 20 }}>{record.body}</p>
+            <div style={{ marginTop: 20 }}><MarkdownContent content={record.body} /></div>
             <Link className="button" href={`/chat?topic=life&recordId=${record.id}`} style={{ marginTop: 18 }}>
               <Bot size={16} />
               围绕这条记录提问

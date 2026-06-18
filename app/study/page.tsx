@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { Bot, GraduationCap } from "lucide-react";
-import { StudyCard } from "@/components/Cards";
+import { InfiniteContentGrid } from "@/components/InfiniteContentGrid";
 import { SectionHeading } from "@/components/SectionHeading";
 import { SiteNav } from "@/components/SiteNav";
-import { studyItems } from "@/lib/mock-data";
+import { listStudyItemsPage } from "@/lib/content-store";
 
-export default function StudyPage() {
+export const dynamic = "force-dynamic";
+
+export default async function StudyPage() {
+  const page = await listStudyItemsPage();
   return (
     <main className="page">
       <SiteNav />
@@ -25,11 +28,12 @@ export default function StudyPage() {
             </Link>
           }
         />
-        <div className="grid two">
-          {studyItems.map((item) => (
-            <StudyCard key={item.id} item={item} />
-          ))}
-        </div>
+        <InfiniteContentGrid
+          type="study"
+          initialItems={page.items}
+          initialCursor={page.nextCursor}
+          initialHasMore={page.hasMore}
+        />
       </section>
       <section className="container section">
         <div className="card">
@@ -43,4 +47,3 @@ export default function StudyPage() {
     </main>
   );
 }
-
