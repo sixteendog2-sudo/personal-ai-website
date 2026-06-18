@@ -2,6 +2,7 @@ import { buildKnowledgeContext, searchKnowledge, toCitations } from "./knowledge
 import type { ChatMessage, Citation, Topic } from "./types";
 import { env } from "./config";
 import { recordAiCall } from "./ai-call-store";
+import { getAiRuntimeSettings } from "./settings-store";
 
 const sceneLabel: Record<Topic, string> = {
   default: "综合介绍",
@@ -13,8 +14,8 @@ const sceneLabel: Record<Topic, string> = {
   social: "社交破冰"
 };
 
-function systemPrompt() {
-  return [
+function systemPrompt(configured?: string, safety?: string) {
+  return configured ? [configured, safety].filter(Boolean).join("\n") : [
     "你是站点主人的 AI 分身助手。",
     "你必须根据提供的个人知识库内容回答。",
     "如果知识库没有相关信息，请明确说明暂时没有记录。",
@@ -61,18 +62,16 @@ export async function generateAiAnswer({
   history?: ChatMessage[];
 }) {
   const startedAt = Date.now();
-  const retrieved = await searchKnowledge({
-    query: message,
-    topic,
-    relatedRecordId,
-    scope: "visitor"
-  });
+  const [retrieved, runtimeSettings] = await Promise.all([
+    searchKnowledge({ query: message, topic, relatedRecordId, scope: "visitor" }),
+    getAiRuntimeSettings(topic)
+  ]);
   const citations = toCitations(retrieved);
   const knowledgeContext = buildKnowledgeContext(retrieved);
 
   const apiKey = env.DEEPSEEK_API_KEY;
-  const baseUrl = env.DEEPSEEK_BASE_URL;
-  const model = env.DEEPSEEK_CHAT_MODEL;
+  const baseUrl = runtimeSettings.baseUrl;
+  const model = runtimeSettings.model;
 
   if (!apiKey) {
     await recordAiCall({ sessionId, provider: "local-demo", model: "mock-rag", latencyMs: Date.now() - startedAt, success: true }).catch(() => undefined);
@@ -94,9 +93,10 @@ export async function generateAiAnswer({
       signal: AbortSignal.timeout(30_000),
       body: JSON.stringify({
         model,
-        temperature: 0.7,
+        temperature: runtimeSettings.temperature,
+        max_tokens: runtimeSettings.maxTokens,
         messages: [
-          { role: "system", content: systemPrompt() },
+          { role: "system", content: systemPrompt(runtimeSettings.systemPrompt, runtimeSettings.safetyPrompt) },
           {
             role: "user",
             content: [

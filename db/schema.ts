@@ -44,6 +44,20 @@ export const adminUsers = pgTable("admin_users", {
   ...timestamps
 }, (table) => [uniqueIndex("admin_users_owner_email_uidx").on(table.ownerId, table.email)]);
 
+export const ownerProfiles = pgTable("owner_profiles", {
+  ownerId: uuid("owner_id").primaryKey().references(() => owners.id, { onDelete: "cascade" }),
+  nickname: varchar("nickname", { length: 120 }).notNull(),
+  realName: varchar("real_name", { length: 120 }),
+  headline: varchar("headline", { length: 300 }).notNull().default(""),
+  bio: text("bio").notNull().default(""),
+  city: varchar("city", { length: 120 }).notNull().default(""),
+  contact: jsonb("contact").$type<{ email?: string; github?: string; wechat?: string }>().notNull().default(sql`'{}'::jsonb`),
+  tags: text("tags").array().notNull().default(sql`ARRAY[]::text[]`),
+  visibility: visibility("visibility").notNull().default("public"),
+  isAiUsable: boolean("is_ai_usable").notNull().default(true),
+  ...timestamps
+});
+
 export const contentItems = pgTable("content_items", {
   id: uuid("id").primaryKey().defaultRandom(),
   ownerId: uuid("owner_id").notNull().references(() => owners.id, { onDelete: "cascade" }),
@@ -177,6 +191,33 @@ export const aiCallLogs = pgTable("ai_call_logs", {
   errorCode: varchar("error_code", { length: 80 }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
 }, (table) => [index("ai_call_logs_owner_created_idx").on(table.ownerId, table.createdAt)]);
+
+export const modelSettings = pgTable("model_settings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  ownerId: uuid("owner_id").notNull().references(() => owners.id, { onDelete: "cascade" }),
+  provider: varchar("provider", { length: 50 }).notNull(),
+  baseUrl: text("base_url").notNull(),
+  model: varchar("model", { length: 120 }).notNull(),
+  temperatureMilli: integer("temperature_milli").notNull().default(700),
+  maxTokens: integer("max_tokens").notNull().default(1200),
+  isActive: boolean("is_active").notNull().default(false),
+  ...timestamps
+}, (table) => [index("model_settings_owner_active_idx").on(table.ownerId, table.isActive)]);
+
+export const promptTemplates = pgTable("prompt_templates", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  ownerId: uuid("owner_id").notNull().references(() => owners.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 120 }).notNull(),
+  scene: varchar("scene", { length: 50 }).notNull().default("default"),
+  systemPrompt: text("system_prompt").notNull(),
+  safetyPrompt: text("safety_prompt").notNull().default(""),
+  version: integer("version").notNull().default(1),
+  isActive: boolean("is_active").notNull().default(false),
+  ...timestamps
+}, (table) => [
+  uniqueIndex("prompt_templates_owner_name_version_uidx").on(table.ownerId, table.name, table.version),
+  index("prompt_templates_owner_scene_active_idx").on(table.ownerId, table.scene, table.isActive)
+]);
 
 export const apiRateLimitEvents = pgTable("api_rate_limit_events", {
   id: uuid("id").primaryKey().defaultRandom(),
