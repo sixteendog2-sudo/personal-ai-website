@@ -8,6 +8,7 @@ import {
   Database,
   Home,
   Image,
+  Mail,
   MessageSquareText,
   Settings,
   Sparkles,
@@ -16,6 +17,7 @@ import {
 import { ADMIN_COOKIE_NAME, getAdminSessionToken } from "@/lib/auth";
 
 const nav = [
+  { href: "/admin/contact-intents", label: "联系意向", icon: Mail },
   { href: "/admin", label: "后台首页", icon: Home },
   { href: "/admin/profile", label: "个人资料", icon: UserRound },
   { href: "/admin/study", label: "学习档案", icon: BookOpen },

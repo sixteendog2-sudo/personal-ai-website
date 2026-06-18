@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Mail, MessageCircle } from "lucide-react";
 import { SiteNav } from "@/components/SiteNav";
 import { profile } from "@/lib/mock-data";
+import { ContactForm } from "./ContactForm";
 
 export default function ContactPage() {
   return (
@@ -29,6 +30,9 @@ export default function ContactPage() {
         ))}
       </section>
       <section className="container section">
+        <div className="card" style={{ marginBottom: 18 }}>
+          <div className="card-body"><h2>留下联系意向</h2><ContactForm /></div>
+        </div>
         <div className="card">
           <div className="card-body">
             <Mail color="#00a88a" size={28} />
@@ -45,4 +49,3 @@ export default function ContactPage() {
     </main>
   );
 }
-
