@@ -56,8 +56,21 @@ pnpm db:migrate
 
 ```bash
 pnpm typecheck
+pnpm test
 pnpm build
 ```
+
+GitHub Actions 会在 `main` push 和 Pull Request 上执行同样的类型检查、单元测试和生产构建。
+
+## 备份
+
+Windows 原生 PostgreSQL 可执行：
+
+```powershell
+pnpm db:backup:windows
+```
+
+脚本使用 custom format 生成 `backups/*.dump`，并立即通过 `pg_restore --list` 校验。`backups/` 已被 Git 忽略；生产环境仍应将备份复制到独立存储，并定期进行恢复演练。
 
 运行后访问：
 

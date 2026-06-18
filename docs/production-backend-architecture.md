@@ -71,3 +71,10 @@ Windows 原生 PostgreSQL 安装默认不包含 pgvector。Visual Studio C++ Bui
 - 提交前运行类型检查和目标接口测试；
 - 跨模块最终运行生产构建；
 - 迁移提交不得与纯 UI 调整混合。
+
+## 备份与验证
+
+- `pnpm db:backup:windows` 使用 `pg_dump` custom format 创建本机备份并校验归档目录。
+- 恢复演练必须使用独立临时数据库，禁止覆盖运行中的 `personal_ai`。
+- CI 顺序为依赖安装、TypeScript 检查、单元测试、生产构建。
+- 当前单元测试覆盖 JWT 防篡改、输入默认安全值和知识分块边界；数据库事务继续通过本机集成测试验证。
