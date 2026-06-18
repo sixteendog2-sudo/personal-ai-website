@@ -1,9 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { ADMIN_COOKIE_NAME, getAdminSessionToken } from "@/lib/auth";
+import { ADMIN_COOKIE_NAME, verifyAdminSession } from "@/lib/auth";
 
 const publicAdminPaths = ["/admin/login", "/api/admin/auth/login"];
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isAdminPath = pathname.startsWith("/admin");
   const isAdminApi = pathname.startsWith("/api/admin");
@@ -17,7 +17,7 @@ export function proxy(request: NextRequest) {
   }
 
   const token = request.cookies.get(ADMIN_COOKIE_NAME)?.value;
-  const authenticated = token === getAdminSessionToken();
+  const authenticated = Boolean(await verifyAdminSession(token));
 
   if (authenticated) {
     return NextResponse.next();
@@ -36,4 +36,3 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: ["/admin/:path*", "/api/admin/:path*"]
 };
-

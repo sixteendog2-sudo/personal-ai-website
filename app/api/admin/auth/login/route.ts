@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { ADMIN_COOKIE_NAME, getAdminSessionToken, isValidAdminPassword } from "@/lib/auth";
+import { ADMIN_COOKIE_NAME, createAdminSession } from "@/lib/auth";
+import { authenticateAdmin } from "@/lib/admin-auth";
 
 function safeNextPath(value: FormDataEntryValue | null) {
   if (typeof value !== "string" || !value.startsWith("/admin")) {
@@ -17,7 +18,8 @@ export async function POST(request: Request) {
   const nextPath = safeNextPath(form.get("next"));
   const url = new URL(request.url);
 
-  if (!isValidAdminPassword(password)) {
+  const admin = await authenticateAdmin(password);
+  if (!admin) {
     url.pathname = "/admin/login";
     url.search = "";
     url.searchParams.set("error", "1");
@@ -29,7 +31,7 @@ export async function POST(request: Request) {
   url.search = "";
 
   const response = NextResponse.redirect(url, { status: 303 });
-  response.cookies.set(ADMIN_COOKIE_NAME, getAdminSessionToken(), {
+  response.cookies.set(ADMIN_COOKIE_NAME, await createAdminSession({ adminUserId: admin.id, ownerId: admin.ownerId, role: admin.role }), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -38,4 +40,3 @@ export async function POST(request: Request) {
   });
   return response;
 }
-

@@ -14,7 +14,7 @@ import {
   Sparkles,
   UserRound
 } from "lucide-react";
-import { ADMIN_COOKIE_NAME, getAdminSessionToken } from "@/lib/auth";
+import { ADMIN_COOKIE_NAME, verifyAdminSession } from "@/lib/auth";
 
 const nav = [
   { href: "/admin/contact-intents", label: "联系意向", icon: Mail },
@@ -32,7 +32,7 @@ const nav = [
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const cookieStore = await cookies();
-  const authenticated = cookieStore.get(ADMIN_COOKIE_NAME)?.value === getAdminSessionToken();
+  const authenticated = Boolean(await verifyAdminSession(cookieStore.get(ADMIN_COOKIE_NAME)?.value));
 
   if (!authenticated) {
     return children;
