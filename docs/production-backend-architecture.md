@@ -28,6 +28,9 @@ Browser
 | 访客沉淀 | `lib/knowledge-store.ts` | `visitor_questions` |
 | 联系意向 | `lib/contact-store.ts` | `contact_intents` |
 | 运营统计 | `lib/dashboard-store.ts` | 聚合查询，不单独存储 |
+| 个人与 AI 配置 | `lib/settings-store.ts` | `owner_profiles`, `model_settings`, `prompt_templates` |
+| 媒体 | `lib/media-store.ts`, `lib/storage.ts` | `media_assets`, `content_media` |
+| 限流与遥测 | `lib/rate-limit.ts`, `lib/ai-call-store.ts` | `api_rate_limit_events`, `ai_call_logs` |
 
 Route Handler 负责 HTTP 解析和响应；store 负责查询与事务；AI 层负责检索、Prompt 和模型供应商调用。页面不得直接写数据库。
 

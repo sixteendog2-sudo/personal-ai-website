@@ -12,6 +12,8 @@
 - 管理员认证：数据库账号、bcrypt 密码哈希、7 天有效期签名 JWT、HttpOnly Cookie。
 - DeepSeek：配置 Key 后调用真实模型；未配置时使用本地 RAG 回答用于开发。
 - 运维：健康检查 `/api/health`、AI 调用日志表和管理员审计日志表。
+- 媒体：本地开发存储与 S3/COS/OSS 兼容驱动，真实类型校验、原图归档、WebP 缩略图和访问控制。
+- 防护：数据库持久限流、管理员状态二次校验和跨站 Origin 拒绝。
 
 ## 本地环境
 
@@ -68,6 +70,6 @@ pnpm build
 ## 后续生产增强
 
 - 安装 pgvector 并将 `knowledge_chunks.embedding` 升级为向量列。
-- 接入 S3、腾讯云 COS 或阿里云 OSS 管理原图与缩略图。
+- 为生产 S3/COS/OSS 桶配置生命周期、备份、CORS 和 CDN 域名。
 - 增加 Redis/托管限流服务和异步 embedding 任务队列。
 - 完成后台内容 CRUD、媒体上传和管理员审计日志写入。
