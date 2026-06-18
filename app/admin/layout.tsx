@@ -11,12 +11,14 @@ import {
   Mail,
   MessageSquareText,
   Settings,
+  ShieldCheck,
   Sparkles,
   UserRound
 } from "lucide-react";
 import { ADMIN_COOKIE_NAME, verifyAdminSession } from "@/lib/auth";
 
 const nav = [
+  { href: "/admin/audit-logs", label: "安全审计", icon: ShieldCheck },
   { href: "/admin/contact-intents", label: "联系意向", icon: Mail },
   { href: "/admin", label: "后台首页", icon: Home },
   { href: "/admin/profile", label: "个人资料", icon: UserRound },
