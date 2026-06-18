@@ -12,6 +12,7 @@ import {
   timestamp,
   uniqueIndex,
   uuid,
+  vector,
   varchar
 } from "drizzle-orm/pg-core";
 
@@ -124,9 +125,12 @@ export const knowledgeChunks = pgTable("knowledge_chunks", {
   content: text("content").notNull(),
   tokenCount: integer("token_count"),
   embeddingModel: varchar("embedding_model", { length: 100 }),
-  embedding: text("embedding"),
+  embedding: vector("embedding", { dimensions: 1536 }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
-}, (table) => [uniqueIndex("knowledge_chunks_item_index_uidx").on(table.knowledgeItemId, table.chunkIndex)]);
+}, (table) => [
+  uniqueIndex("knowledge_chunks_item_index_uidx").on(table.knowledgeItemId, table.chunkIndex),
+  index("knowledge_chunks_embedding_hnsw_idx").using("hnsw", table.embedding.op("vector_cosine_ops"))
+]);
 
 export const chatSessions = pgTable("chat_sessions", {
   id: uuid("id").primaryKey().defaultRandom(),

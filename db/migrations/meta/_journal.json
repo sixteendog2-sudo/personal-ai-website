@@ -43,6 +43,13 @@
       "when": 1781749113186,
       "tag": "0005_minor_stranger",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1781764233624,
+      "tag": "0006_brave_sway",
+      "breakpoints": true
     }
   ]
 }
