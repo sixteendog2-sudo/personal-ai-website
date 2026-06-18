@@ -1,56 +1,73 @@
 # Personal AI Digital Avatar
 
-这是一个面向升学、社交、求职场景的个人 AI 数字分身网站 demo。
+面向升学、社交和求职场景的个人 AI 网站。项目采用 Next.js 模块化单体架构，访客端、管理端、API 与 RAG 服务共享同一套类型和部署单元，生产数据存储于 PostgreSQL。
 
-当前 demo 已包含：
+## 已实现
 
-- 访客端：首页、AI 对话、学习成长、生活记录、工作项目、关于我、联系我。
-- 管理端：后台首页、个人资料、知识库、学习档案、工作项目、生活记录、访客问题、聊天记录、模型设置、提示词配置。
-- API：公开内容接口、访客聊天接口、管理端数据接口。
-- 知识库：本地 mock RAG 检索，按 `visibility + status + isAiUsable` 隔离数据。
-- DeepSeek：预留真实调用，未配置 key 时自动使用本地模拟回答。
-- 管理员保护：`/admin` 和 `/api/admin/*` 默认需要登录，demo 密码为 `demo123456`。
-- 设计文档：`docs/`。
-- 数据库草案：`db/schema.sql`。
+- 访客端：首页、AI 对话、学习、生活、项目、关于和联系页面。
+- 管理端：知识库、访客问题、聊天日志、联系意向和运营统计。
+- PostgreSQL：Drizzle schema、版本化迁移、可重复种子初始化。
+- 数据隔离：所有核心表含 `owner_id`，公开查询强制检查发布状态与可见性。
+- 知识闭环：对话沉淀访客问题，管理员可在事务中转换为可检索知识。
+- 管理员认证：数据库账号、bcrypt 密码哈希、7 天有效期签名 JWT、HttpOnly Cookie。
+- DeepSeek：配置 Key 后调用真实模型；未配置时使用本地 RAG 回答用于开发。
+- 运维：健康检查 `/api/health`、AI 调用日志表和管理员审计日志表。
 
-## 本地运行
+## 本地环境
+
+- Node.js `>=20.18`
+- pnpm `11`
+- PostgreSQL `17`（推荐；项目当前本机使用原生 Windows 服务，不依赖 Docker）
 
 ```bash
 pnpm install
+pnpm db:migrate
+pnpm db:seed
 pnpm dev
 ```
 
-如果本机没有 pnpm，也可以使用 Codex 内置运行时执行：
+复制 `.env.example` 为 `.env.local`，至少配置：
 
-```powershell
-& "C:\Users\SIXTEENDOG\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe" `
-  "C:\Users\SIXTEENDOG\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\node_modules\pnpm\bin\pnpm.cjs" install
+```env
+DATABASE_URL=postgresql://personal_ai_app:your-password@localhost:5432/personal_ai
+DATABASE_MAX_CONNECTIONS=10
+DATABASE_SSL=false
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=replace-with-a-strong-password
+ADMIN_SESSION_TOKEN=replace-with-at-least-32-random-characters
 ```
 
-## 环境变量
+真实模型调用还需配置 `DEEPSEEK_API_KEY`。`.env.local` 已被 Git 忽略，禁止提交真实密钥。
 
-复制 `.env.example` 为 `.env.local`，按需填入：
+## 数据库工作流
+
+修改 [db/schema.ts](./db/schema.ts) 后执行：
 
 ```bash
-DEEPSEEK_API_KEY=
-DEEPSEEK_BASE_URL=https://api.deepseek.com
-DEEPSEEK_CHAT_MODEL=deepseek-v4-flash
-ADMIN_PASSWORD=demo123456
-ADMIN_SESSION_TOKEN=replace-with-a-long-random-secret
-DATABASE_URL=
+pnpm db:generate
+pnpm db:migrate
 ```
 
-## Vercel 部署
+`db/migrations/` 是生产迁移的权威记录；`db/schema.sql` 是早期完整设计参考，不应直接覆盖已迁移数据库。
 
-1. 将本项目推送到 GitHub。
-2. 在 Vercel 导入仓库。
-3. Framework 选择 Next.js。
-4. 设置环境变量。
-5. 部署。
+## 验证
 
-## 下一步
+```bash
+pnpm typecheck
+pnpm build
+```
 
-- 将 mock 数据替换为 PostgreSQL + pgvector。
-- 接入真实对象存储。
-- 接入真实管理员认证。
-- 使用后台操作沉淀访客问题到知识库。
+运行后访问：
+
+- 网站：`http://127.0.0.1:3000`
+- 管理端：`http://127.0.0.1:3000/admin/login`
+- 健康检查：`http://127.0.0.1:3000/api/health`
+
+详细架构和迭代边界见 [生产后端架构](./docs/production-backend-architecture.md)。
+
+## 后续生产增强
+
+- 安装 pgvector 并将 `knowledge_chunks.embedding` 升级为向量列。
+- 接入 S3、腾讯云 COS 或阿里云 OSS 管理原图与缩略图。
+- 增加 Redis/托管限流服务和异步 embedding 任务队列。
+- 完成后台内容 CRUD、媒体上传和管理员审计日志写入。

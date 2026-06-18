@@ -1,5 +1,5 @@
--- Personal AI digital avatar website
--- PostgreSQL + pgvector schema draft
+-- Design reference only. Production migrations are generated from db/schema.ts.
+-- Personal AI digital avatar website / PostgreSQL + pgvector schema draft
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE EXTENSION IF NOT EXISTS vector;
