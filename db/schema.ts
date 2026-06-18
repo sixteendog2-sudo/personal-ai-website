@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import type { Citation } from "../lib/types";
 import {
   boolean,
   index,
@@ -85,7 +86,7 @@ export const knowledgeItems = pgTable("knowledge_items", {
   id: uuid("id").primaryKey().defaultRandom(),
   ownerId: uuid("owner_id").notNull().references(() => owners.id, { onDelete: "cascade" }),
   sourceType: varchar("source_type", { length: 40 }).notNull(),
-  sourceId: uuid("source_id"),
+  sourceId: text("source_id"),
   title: varchar("title", { length: 240 }).notNull(),
   category: varchar("category", { length: 100 }).notNull(),
   body: text("body").notNull(),
@@ -113,7 +114,7 @@ export const chatSessions = pgTable("chat_sessions", {
   visitorId: uuid("visitor_id").notNull().defaultRandom(),
   topic: varchar("topic", { length: 40 }).notNull().default("default"),
   entry: varchar("entry", { length: 80 }).notNull().default("chat"),
-  relatedRecordId: uuid("related_record_id"),
+  relatedRecordId: text("related_record_id"),
   userAgent: text("user_agent"),
   ipHash: varchar("ip_hash", { length: 128 }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -125,7 +126,7 @@ export const chatMessages = pgTable("chat_messages", {
   sessionId: uuid("session_id").notNull().references(() => chatSessions.id, { onDelete: "cascade" }),
   role: messageRole("role").notNull(),
   content: text("content").notNull(),
-  citations: jsonb("citations").$type<Array<Record<string, unknown>>>().notNull().default(sql`'[]'::jsonb`),
+  citations: jsonb("citations").$type<Citation[]>().notNull().default(sql`'[]'::jsonb`),
   provider: varchar("provider", { length: 50 }),
   model: varchar("model", { length: 100 }),
   latencyMs: integer("latency_ms"),
@@ -139,6 +140,7 @@ export const visitorQuestions = pgTable("visitor_questions", {
   messageId: uuid("message_id").references(() => chatMessages.id, { onDelete: "set null" }),
   question: text("question").notNull(),
   answer: text("answer").notNull(),
+  citations: jsonb("citations").$type<Citation[]>().notNull().default(sql`'[]'::jsonb`),
   topic: varchar("topic", { length: 40 }).notNull(),
   status: questionStatus("status").notNull().default("new"),
   convertedKnowledgeItemId: uuid("converted_knowledge_item_id"),

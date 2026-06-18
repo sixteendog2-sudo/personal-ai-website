@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateAiAnswer } from "@/lib/ai";
-import { addChatMessage, addVisitorQuestion, ensureChatSession } from "@/lib/runtime-store";
+import { addChatMessage, addVisitorQuestion, ensureChatSession } from "@/lib/chat-store";
 import type { Topic } from "@/lib/types";
 
 function normalizeTopic(topic: unknown): Topic {
@@ -30,14 +30,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ ses
   }
 
   const topic = normalizeTopic(body.context?.topic);
-  const session = ensureChatSession({
-    sessionId,
+  const session = await ensureChatSession(sessionId, {
     topic,
     entry: "message-endpoint",
     relatedRecordId: body.context?.relatedRecordId
   });
 
-  addChatMessage(session.id, {
+  const userMessage = await addChatMessage(session.id, {
     role: "user",
     content: message
   });
@@ -49,13 +48,17 @@ export async function POST(request: Request, { params }: { params: Promise<{ ses
     history: session.messages
   });
 
-  const assistant = addChatMessage(session.id, {
+  const assistant = await addChatMessage(session.id, {
     role: "assistant",
     content: ai.answer,
-    citations: ai.citations
+    citations: ai.citations,
+    provider: ai.provider,
+    model: ai.model
   });
 
-  const question = addVisitorQuestion({
+  const question = await addVisitorQuestion({
+    sessionId: session.id,
+    messageId: userMessage?.id,
     question: message,
     answer: ai.answer,
     topic,

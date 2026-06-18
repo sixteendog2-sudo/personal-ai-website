@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createChatSession } from "@/lib/runtime-store";
+import { createChatSession } from "@/lib/chat-store";
 import type { Topic } from "@/lib/types";
 
 function normalizeTopic(topic: unknown): Topic {
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     relatedRecordId?: string;
   };
 
-  const session = createChatSession({
+  const session = await createChatSession({
     topic: normalizeTopic(body.topic),
     entry: body.entry ?? "chat",
     relatedRecordId: body.relatedRecordId
@@ -27,4 +27,3 @@ export async function POST(request: Request) {
     suggestedQuestions: ["你是谁？", "介绍一下你的项目经历", "你适合什么研究方向？", "平时有什么兴趣？"]
   });
 }
-
