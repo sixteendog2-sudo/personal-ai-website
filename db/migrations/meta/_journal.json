@@ -29,6 +29,13 @@
       "when": 1781748631888,
       "tag": "0003_enable_pg_trgm",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1781748867891,
+      "tag": "0004_plain_johnny_blaze",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,7 @@
 import { buildKnowledgeContext, searchKnowledge, toCitations } from "./knowledge";
 import type { ChatMessage, Citation, Topic } from "./types";
+import { env } from "./config";
+import { recordAiCall } from "./ai-call-store";
 
 const sceneLabel: Record<Topic, string> = {
   default: "综合介绍",
@@ -49,13 +51,16 @@ export async function generateAiAnswer({
   message,
   topic = "default",
   relatedRecordId,
+  sessionId,
   history = []
 }: {
   message: string;
   topic?: Topic;
   relatedRecordId?: string;
+  sessionId?: string;
   history?: ChatMessage[];
 }) {
+  const startedAt = Date.now();
   const retrieved = await searchKnowledge({
     query: message,
     topic,
@@ -65,11 +70,12 @@ export async function generateAiAnswer({
   const citations = toCitations(retrieved);
   const knowledgeContext = buildKnowledgeContext(retrieved);
 
-  const apiKey = process.env.DEEPSEEK_API_KEY;
-  const baseUrl = process.env.DEEPSEEK_BASE_URL ?? "https://api.deepseek.com";
-  const model = process.env.DEEPSEEK_CHAT_MODEL ?? "deepseek-v4-flash";
+  const apiKey = env.DEEPSEEK_API_KEY;
+  const baseUrl = env.DEEPSEEK_BASE_URL;
+  const model = env.DEEPSEEK_CHAT_MODEL;
 
   if (!apiKey) {
+    await recordAiCall({ sessionId, provider: "local-demo", model: "mock-rag", latencyMs: Date.now() - startedAt, success: true }).catch(() => undefined);
     return {
       answer: localAnswer(message, citations, topic),
       citations,
@@ -85,6 +91,7 @@ export async function generateAiAnswer({
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`
       },
+      signal: AbortSignal.timeout(30_000),
       body: JSON.stringify({
         model,
         temperature: 0.7,
@@ -109,7 +116,16 @@ export async function generateAiAnswer({
 
     const payload = (await response.json()) as {
       choices?: Array<{ message?: { content?: string } }>;
+      usage?: { prompt_tokens?: number; completion_tokens?: number };
     };
+
+    await recordAiCall({
+      sessionId, provider: "deepseek", model,
+      promptTokens: payload.usage?.prompt_tokens,
+      completionTokens: payload.usage?.completion_tokens,
+      latencyMs: Date.now() - startedAt,
+      success: true
+    }).catch(() => undefined);
 
     return {
       answer: payload.choices?.[0]?.message?.content ?? localAnswer(message, citations, topic),
@@ -118,6 +134,11 @@ export async function generateAiAnswer({
       model
     };
   } catch (error) {
+    const errorCode = error instanceof Error ? error.name : "unknown";
+    await recordAiCall({
+      sessionId, provider: "deepseek", model,
+      latencyMs: Date.now() - startedAt, success: false, errorCode
+    }).catch(() => undefined);
     return {
       answer: `${localAnswer(message, citations, topic)}\n\n提示：真实模型调用暂时失败，demo 已使用本地知识库回答。`,
       citations,

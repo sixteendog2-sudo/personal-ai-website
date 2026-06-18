@@ -1,7 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { generateAiAnswer } from "@/lib/ai";
 import { addChatMessage, addVisitorQuestion, ensureChatSession } from "@/lib/chat-store";
 import type { Topic } from "@/lib/types";
+import { consumeRateLimit } from "@/lib/rate-limit";
+import { getVisitorRateLimitKey } from "@/lib/request-context";
 
 function normalizeTopic(topic: unknown): Topic {
   if (topic === "study" || topic === "life" || topic === "work" || topic === "admission" || topic === "career" || topic === "social") {
@@ -10,7 +12,9 @@ function normalizeTopic(topic: unknown): Topic {
   return "default";
 }
 
-export async function POST(request: Request, { params }: { params: Promise<{ sessionId: string }> }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ sessionId: string }> }) {
+  const rate = await consumeRateLimit({ keyHash: getVisitorRateLimitKey(request), action: "chat.message.create", limit: 30, windowSeconds: 600 });
+  if (!rate.allowed) return NextResponse.json({ error: "Too many messages" }, { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } });
   const { sessionId } = await params;
   const body = (await request.json().catch(() => ({}))) as {
     message?: string;
@@ -44,6 +48,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ ses
   const ai = await generateAiAnswer({
     message,
     topic,
+    sessionId: session.id,
     relatedRecordId: body.context?.relatedRecordId ?? session.relatedRecordId,
     history: session.messages
   });

@@ -1,5 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createChatSession } from "@/lib/chat-store";
+import { consumeRateLimit } from "@/lib/rate-limit";
+import { getVisitorRateLimitKey } from "@/lib/request-context";
 import type { Topic } from "@/lib/types";
 
 function normalizeTopic(topic: unknown): Topic {
@@ -9,7 +11,9 @@ function normalizeTopic(topic: unknown): Topic {
   return "default";
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const rate = await consumeRateLimit({ keyHash: getVisitorRateLimitKey(request), action: "chat.session.create", limit: 20, windowSeconds: 3600 });
+  if (!rate.allowed) return NextResponse.json({ error: "Too many chat sessions" }, { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } });
   const body = (await request.json().catch(() => ({}))) as {
     topic?: unknown;
     entry?: string;

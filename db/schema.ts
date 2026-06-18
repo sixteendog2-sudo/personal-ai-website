@@ -178,6 +178,13 @@ export const aiCallLogs = pgTable("ai_call_logs", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
 }, (table) => [index("ai_call_logs_owner_created_idx").on(table.ownerId, table.createdAt)]);
 
+export const apiRateLimitEvents = pgTable("api_rate_limit_events", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  keyHash: varchar("key_hash", { length: 64 }).notNull(),
+  action: varchar("action", { length: 80 }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+}, (table) => [index("api_rate_limit_events_lookup_idx").on(table.keyHash, table.action, table.createdAt)]);
+
 export const adminAuditLogs = pgTable("admin_audit_logs", {
   id: uuid("id").primaryKey().defaultRandom(),
   ownerId: uuid("owner_id").notNull().references(() => owners.id, { onDelete: "cascade" }),
