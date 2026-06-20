@@ -59,7 +59,7 @@ async function main() {
     await db.insert(modelSettings).values({
       ownerId: DEFAULT_OWNER_ID, provider: "deepseek",
       baseUrl: process.env.DEEPSEEK_BASE_URL ?? "https://api.deepseek.com",
-      model: process.env.DEEPSEEK_CHAT_MODEL ?? "deepseek-v4-flash",
+      model: process.env.DEEPSEEK_CHAT_MODEL ?? "deepseek-chat",
       temperatureMilli: 700, maxTokens: 1200, isActive: true
     });
   }

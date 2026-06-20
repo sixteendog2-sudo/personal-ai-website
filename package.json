@@ -19,7 +19,8 @@
     "db:seed": "tsx scripts/db-seed.ts",
     "db:studio": "drizzle-kit studio",
     "db:bootstrap:pgvector:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/bootstrap-pgvector-database-windows.ps1",
-    "db:backup:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/db-backup-windows.ps1"
+    "db:backup:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/db-backup-windows.ps1",
+    "ai:configure:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/configure-deepseek-windows.ps1"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1070.0",
