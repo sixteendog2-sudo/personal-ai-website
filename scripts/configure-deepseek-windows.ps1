@@ -13,10 +13,11 @@ try {
   $apiKey = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($pointer)
   if ([string]::IsNullOrWhiteSpace($apiKey)) { throw "DeepSeek API key cannot be empty." }
 
-  $lines = if (Test-Path -LiteralPath $envPath) {
-    [Collections.Generic.List[string]](Get-Content -LiteralPath $envPath)
-  } else {
-    [Collections.Generic.List[string]]::new()
+  $lines = [Collections.Generic.List[string]]::new()
+  if (Test-Path -LiteralPath $envPath) {
+    foreach ($line in Get-Content -LiteralPath $envPath) {
+      $lines.Add([string]$line)
+    }
   }
 
   function Set-EnvValue([string]$Name, [string]$Value) {
