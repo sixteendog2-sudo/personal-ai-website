@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { getDatabase, isDatabaseConfigured } from "@/db/client";
 import { knowledgeItems as knowledgeTable, visitorQuestions } from "@/db/schema";
 import { knowledgeItems as mockKnowledge } from "@/lib/mock-data";
@@ -57,6 +57,7 @@ export async function searchKnowledgeCandidates(query: string, scope: "visitor" 
     eq(knowledgeTable.isAiUsable, true)
   ];
   if (scope === "visitor") conditions.push(eq(knowledgeTable.visibility, "public"));
+  if (scope === "visitor") conditions.push(inArray(knowledgeTable.sourceType, ["study_item", "work_project", "life_record", "visitor_question"]));
   const rows = await getDatabase().select().from(knowledgeTable)
     .where(and(...conditions))
     .orderBy(desc(similarity), desc(knowledgeTable.updatedAt))

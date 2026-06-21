@@ -1,5 +1,5 @@
-import { StudyDocumentClient } from "./StudyDocumentClient";
+import { AdminContentManager } from "@/components/AdminContentManager";
 
 export default function AdminStudyPage() {
-  return <StudyDocumentClient />;
+  return <AdminContentManager type="study" />;
 }

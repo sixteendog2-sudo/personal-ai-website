@@ -1,6 +1,6 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { getDatabase } from "@/db/client";
-import { contentItems } from "@/db/schema";
+import { contentItems, contentMedia, mediaAssets } from "@/db/schema";
 import { DEFAULT_OWNER_ID } from "@/lib/tenant";
 import type { LifeRecord, StudyItem, WorkProject } from "@/lib/types";
 
@@ -36,32 +36,54 @@ async function listRows(type: "life" | "study" | "work", options?: { limit?: num
   };
 }
 
-function mapLifeRecord(row: typeof contentItems.$inferSelect): LifeRecord {
+type PublicImage = { url: string; alt: string } | undefined;
+
+async function primaryImages(rows: Array<typeof contentItems.$inferSelect>) {
+  const result = new Map<string, PublicImage>();
+  if (rows.length === 0) return result;
+  const db = getDatabase();
+  const links = await db.select().from(contentMedia).where(inArray(contentMedia.contentId, rows.map((row) => row.id)));
+  if (links.length === 0) return result;
+  const originals = await db.select().from(mediaAssets).where(inArray(mediaAssets.id, links.map((link) => link.mediaId)));
+  const thumbnails = await db.select().from(mediaAssets).where(inArray(mediaAssets.parentAssetId, links.map((link) => link.mediaId)));
+  for (const row of rows) {
+    const link = links.filter((candidate) => candidate.contentId === row.id).sort((a, b) => a.sortOrder - b.sortOrder)[0];
+    if (!link) continue;
+    const original = originals.find((asset) => asset.id === link.mediaId);
+    const deliverable = thumbnails.find((asset) => asset.parentAssetId === link.mediaId) ?? original;
+    if (deliverable) result.set(row.id, { url: `/api/media/${deliverable.id}`, alt: original?.altText || row.title });
+  }
+  return result;
+}
+
+function mapLifeRecord(row: typeof contentItems.$inferSelect, image?: PublicImage): LifeRecord {
   return {
     id: row.slug, ownerId: row.ownerId, title: row.title, excerpt: row.summary ?? "", body: row.body,
     occurredAt: row.happenedAt?.toISOString().slice(0, 10) ?? "", location: String(row.metadata.location ?? ""),
     mood: String(row.metadata.mood ?? ""), imageTone: String(row.metadata.imageTone ?? ""),
     tags: (row.metadata.tags as string[]) ?? [], isAiUsable: Boolean(row.metadata.isAiUsable),
-    status: row.status, visibility: row.visibility
+    status: row.status, visibility: row.visibility, imageUrl: image?.url, imageAlt: image?.alt
   };
 }
 
-function mapStudyItem(row: typeof contentItems.$inferSelect): StudyItem {
+function mapStudyItem(row: typeof contentItems.$inferSelect, image?: PublicImage): StudyItem {
   return {
     id: row.slug, ownerId: row.ownerId, type: String(row.metadata.studyType ?? "other"), title: row.title,
     summary: row.summary ?? "", body: row.body, period: String(row.metadata.period ?? ""),
     institution: String(row.metadata.institution ?? ""), tags: (row.metadata.tags as string[]) ?? [],
-    isAiUsable: Boolean(row.metadata.isAiUsable), status: row.status, visibility: row.visibility
+    isAiUsable: Boolean(row.metadata.isAiUsable), status: row.status, visibility: row.visibility,
+    imageUrl: image?.url, imageAlt: image?.alt
   };
 }
 
-function mapWorkProject(row: typeof contentItems.$inferSelect): WorkProject {
+function mapWorkProject(row: typeof contentItems.$inferSelect, image?: PublicImage): WorkProject {
   return {
     id: row.slug, ownerId: row.ownerId, title: row.title, summary: row.summary ?? "", body: row.body,
     role: String(row.metadata.role ?? ""), techStack: (row.metadata.techStack as string[]) ?? [],
     result: String(row.metadata.result ?? ""), period: String(row.metadata.period ?? ""),
     imageTone: String(row.metadata.imageTone ?? ""), tags: (row.metadata.tags as string[]) ?? [],
-    isAiUsable: Boolean(row.metadata.isAiUsable), status: row.status, visibility: row.visibility
+    isAiUsable: Boolean(row.metadata.isAiUsable), status: row.status, visibility: row.visibility,
+    imageUrl: image?.url, imageAlt: image?.alt
   };
 }
 
@@ -78,7 +100,8 @@ async function getRow(type: "life" | "study" | "work", slug: string) {
 
 export async function listLifeRecordsPage(options?: { limit?: number; cursor?: string | null }): Promise<ContentPage<LifeRecord>> {
   const page = await listRows("life", options);
-  return { items: page.rows.map(mapLifeRecord), hasMore: page.hasMore, nextCursor: page.nextCursor };
+  const images = await primaryImages(page.rows);
+  return { items: page.rows.map((row) => mapLifeRecord(row, images.get(row.id))), hasMore: page.hasMore, nextCursor: page.nextCursor };
 }
 
 export async function listLifeRecords(): Promise<LifeRecord[]> {
@@ -87,12 +110,15 @@ export async function listLifeRecords(): Promise<LifeRecord[]> {
 
 export async function getLifeRecord(slug: string) {
   const row = await getRow("life", slug);
-  return row ? mapLifeRecord(row) : undefined;
+  if (!row) return undefined;
+  const images = await primaryImages([row]);
+  return mapLifeRecord(row, images.get(row.id));
 }
 
 export async function listStudyItemsPage(options?: { limit?: number; cursor?: string | null }): Promise<ContentPage<StudyItem>> {
   const page = await listRows("study", options);
-  return { items: page.rows.map(mapStudyItem), hasMore: page.hasMore, nextCursor: page.nextCursor };
+  const images = await primaryImages(page.rows);
+  return { items: page.rows.map((row) => mapStudyItem(row, images.get(row.id))), hasMore: page.hasMore, nextCursor: page.nextCursor };
 }
 
 export async function listStudyItems(): Promise<StudyItem[]> {
@@ -101,12 +127,15 @@ export async function listStudyItems(): Promise<StudyItem[]> {
 
 export async function getStudyItem(slug: string) {
   const row = await getRow("study", slug);
-  return row ? mapStudyItem(row) : undefined;
+  if (!row) return undefined;
+  const images = await primaryImages([row]);
+  return mapStudyItem(row, images.get(row.id));
 }
 
 export async function listWorkProjectsPage(options?: { limit?: number; cursor?: string | null }): Promise<ContentPage<WorkProject>> {
   const page = await listRows("work", options);
-  return { items: page.rows.map(mapWorkProject), hasMore: page.hasMore, nextCursor: page.nextCursor };
+  const images = await primaryImages(page.rows);
+  return { items: page.rows.map((row) => mapWorkProject(row, images.get(row.id))), hasMore: page.hasMore, nextCursor: page.nextCursor };
 }
 
 export async function listWorkProjects(): Promise<WorkProject[]> {
@@ -115,5 +144,7 @@ export async function listWorkProjects(): Promise<WorkProject[]> {
 
 export async function getWorkProject(slug: string) {
   const row = await getRow("work", slug);
-  return row ? mapWorkProject(row) : undefined;
+  if (!row) return undefined;
+  const images = await primaryImages([row]);
+  return mapWorkProject(row, images.get(row.id));
 }

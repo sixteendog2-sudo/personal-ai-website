@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { archiveAdminContent, getAdminContent, updateAdminContent } from "@/lib/admin-content-store";
+import { deleteAdminContent, getAdminContent, updateAdminContent } from "@/lib/admin-content-store";
 import { getAdminRequestSession } from "@/lib/api-auth";
 import { getRequestIpHash } from "@/lib/request-context";
+import { deleteOrphanedMedia } from "@/lib/media-store";
 import { contentPatchSchema } from "../schema";
 
 const idSchema = z.uuid();
@@ -34,6 +35,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const parsedId = idSchema.safeParse((await params).id);
   if (!parsedId.success) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
-  const item = await archiveAdminContent({ ...session, ipHash: getRequestIpHash(request) }, parsedId.data);
+  const item = await deleteAdminContent({ ...session, ipHash: getRequestIpHash(request) }, parsedId.data);
+  if (item) await deleteOrphanedMedia(session.ownerId, item.detachedMediaIds);
   return item ? NextResponse.json({ item }) : NextResponse.json({ error: "Not found" }, { status: 404 });
 }

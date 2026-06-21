@@ -29,13 +29,6 @@ export default async function LifePage() {
             </Link>
           }
         />
-        <div className="chips" style={{ marginBottom: 18 }}>
-          <span className="chip">全部</span>
-          <span className="chip cyan">旅行</span>
-          <span className="chip coral">日常</span>
-          <span className="chip lime">成长</span>
-          <span className="chip">灵感</span>
-        </div>
         <InfiniteContentGrid
           type="life"
           initialItems={page.items}

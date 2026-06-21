@@ -24,7 +24,7 @@ export default async function WorkDetailPage({ params }: { params: Promise<{ id:
         <p>{project.summary}</p>
       </section>
       <section className="container section detail-layout">
-        <div className={`photo detail-photo ${project.imageTone}`} />
+        {project.imageUrl ? <img className="photo detail-photo" src={project.imageUrl} alt={project.imageAlt || project.title} /> : <div className={`photo detail-photo ${project.imageTone}`} />}
         <aside className="card">
           <div className="card-body">
             <BriefcaseBusiness color="#00a88a" size={28} />

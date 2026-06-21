@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bot, Sparkles } from "lucide-react";
+import { Bot } from "lucide-react";
 
 const links = [
   { href: "/study", label: "学习成长" },
@@ -25,10 +25,6 @@ export function SiteNav() {
           ))}
         </nav>
         <div className="nav-actions">
-          <Link className="button secondary" href="/admin">
-            <Sparkles size={16} />
-            后台
-          </Link>
           <Link className="button" href="/chat">
             <Bot size={16} />
             开始咨询
@@ -38,4 +34,3 @@ export function SiteNav() {
     </header>
   );
 }
-

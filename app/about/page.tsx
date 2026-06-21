@@ -1,9 +1,16 @@
 import Link from "next/link";
 import { Bot, MapPin, Tags } from "lucide-react";
 import { SiteNav } from "@/components/SiteNav";
-import { profile } from "@/lib/mock-data";
+import { profile as fallbackProfile } from "@/lib/mock-data";
+import { getOwnerProfile } from "@/lib/settings-store";
 
-export default function AboutPage() {
+export const dynamic = "force-dynamic";
+
+export default async function AboutPage() {
+  const stored = await getOwnerProfile();
+  const profile = stored?.visibility === "public" ? {
+    nickname: stored.nickname, headline: stored.headline, bio: stored.bio, city: stored.city, tags: stored.tags
+  } : fallbackProfile;
   return (
     <main className="page">
       <SiteNav />
@@ -53,4 +60,3 @@ export default function AboutPage() {
     </main>
   );
 }
-

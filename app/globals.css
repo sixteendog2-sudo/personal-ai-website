@@ -302,7 +302,10 @@ select {
 }
 
 .photo {
+  display: block;
+  width: 100%;
   min-height: 190px;
+  object-fit: cover;
   background: linear-gradient(135deg, var(--teal), var(--cyan));
 }
 
@@ -549,6 +552,64 @@ select {
   color: white;
 }
 
+.admin-sidebar-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.admin-sidebar-heading .brand {
+  color: white;
+}
+
+.admin-nav {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-logout {
+  margin-top: 20px;
+}
+
+.admin-logout .button {
+  width: 100%;
+}
+
+.admin-mobile-header,
+.admin-menu-backdrop,
+.admin-menu-close {
+  display: none;
+}
+
+.life-filters {
+  margin-bottom: 18px;
+}
+
+.life-filters .chip {
+  cursor: pointer;
+}
+
+.life-filters .chip[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px var(--ink);
+}
+
+.bubble.assistant .markdown-content {
+  color: inherit;
+}
+
+.bubble.assistant .markdown-content h2,
+.bubble.assistant .markdown-content h3,
+.bubble.assistant .markdown-content h4 {
+  margin: 14px 0 8px;
+  font-size: 1rem;
+}
+
+.bubble.assistant .markdown-content ul {
+  margin: 6px 0;
+  padding-left: 20px;
+}
+
 .admin-sidebar a {
   display: flex;
   align-items: center;
@@ -686,6 +747,89 @@ select {
   font-size: 14px;
 }
 
+.privacy-note {
+  margin: 10px 0 0;
+  border-left: 3px solid var(--teal);
+  padding-left: 12px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.admin-editor-heading,
+.admin-content-row,
+.admin-row-actions {
+  display: flex;
+  align-items: center;
+}
+
+.admin-editor-heading {
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.admin-editor-heading h2,
+.admin-editor-heading p {
+  margin: 0;
+}
+
+.admin-editor-heading p {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.admin-content-list {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-content-row {
+  gap: 16px;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+
+.admin-content-thumb {
+  width: 112px;
+  height: 84px;
+  flex: 0 0 auto;
+  border-radius: var(--radius);
+  object-fit: cover;
+  background: var(--soft);
+}
+
+.admin-content-thumb.empty {
+  display: grid;
+  place-items: center;
+  color: var(--weak);
+  font-size: 12px;
+}
+
+.admin-content-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.admin-content-copy h3,
+.admin-content-copy p {
+  margin: 0;
+}
+
+.admin-content-copy p {
+  margin-top: 6px;
+  overflow: hidden;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-row-actions {
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
 .table-scroll {
   overflow-x: auto;
 }
@@ -735,8 +879,65 @@ select {
   }
 
   .admin-sidebar {
-    position: static;
-    height: auto;
+    position: fixed;
+    z-index: 40;
+    top: 0;
+    left: 0;
+    width: min(310px, 86vw);
+    height: 100vh;
+    overflow-y: auto;
+    transform: translateX(-105%);
+    transition: transform 180ms ease;
+  }
+
+  .admin-mobile-header {
+    display: flex;
+    position: sticky;
+    z-index: 30;
+    top: 0;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.96);
+    padding: 12px 18px;
+    backdrop-filter: blur(12px);
+  }
+
+  .admin-mobile-header .brand {
+    width: auto;
+  }
+
+  .admin-menu-button {
+    display: inline-grid;
+    width: 42px;
+    height: 42px;
+    cursor: pointer;
+    place-items: center;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: transparent;
+  }
+
+  .admin-menu-close {
+    color: white;
+    border-color: rgba(255, 255, 255, 0.22);
+  }
+
+  .admin-menu-open .admin-sidebar {
+    transform: translateX(0);
+  }
+
+  .admin-menu-open .admin-menu-backdrop {
+    display: block;
+    position: fixed;
+    z-index: 35;
+    inset: 0;
+    background: rgba(20, 32, 37, 0.54);
+  }
+
+  .admin-main {
+    min-width: 0;
+    padding: 20px 16px 32px;
   }
 
   .bubble {
@@ -753,6 +954,19 @@ select {
 
   .document-upload input {
     grid-column: 1 / -1;
+  }
+
+  .admin-content-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .admin-content-copy {
+    min-width: calc(100% - 128px);
+  }
+
+  .admin-row-actions {
+    width: 100%;
   }
 }
 

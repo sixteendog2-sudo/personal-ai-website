@@ -22,6 +22,7 @@ export default async function StudyDetailPage({ params }: { params: Promise<{ id
       </section>
       <section className="container section detail-layout">
         <article className="card">
+          {item.imageUrl ? <img className="photo" src={item.imageUrl} alt={item.imageAlt || item.title} /> : null}
           <div className="card-body">
             <MarkdownContent content={item.body} />
           </div>

@@ -3,6 +3,7 @@
 import { FormEvent, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Bot, Send } from "lucide-react";
+import { MarkdownContent } from "@/components/MarkdownContent";
 import type { Citation, Topic } from "@/lib/types";
 
 type UiMessage = {
@@ -138,7 +139,7 @@ export function ChatClient() {
         <div className="messages">
           {messages.map((message, index) => (
             <div className={`bubble ${message.role}`} key={`${message.role}-${index}`}>
-              {message.content}
+              {message.role === "assistant" ? <MarkdownContent content={message.content} /> : message.content}
               {message.citations?.length ? (
                 <div className="citation">
                   参考：{message.citations.map((citation) => `《${citation.title}》`).join("、")}
@@ -159,4 +160,3 @@ export function ChatClient() {
     </section>
   );
 }
-

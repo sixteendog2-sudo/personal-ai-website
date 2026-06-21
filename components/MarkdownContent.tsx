@@ -1,5 +1,17 @@
 import type { ReactNode } from "react";
 
+function renderInlineMarkdown(value: string, keyPrefix: string) {
+  return value.split(/(`[^`]+`|\*\*[^*]+\*\*)/g).filter(Boolean).map((part, index) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={`${keyPrefix}-strong-${index}`}>{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith("`") && part.endsWith("`")) {
+      return <code key={`${keyPrefix}-code-${index}`}>{part.slice(1, -1)}</code>;
+    }
+    return part;
+  });
+}
+
 export function MarkdownContent({ content }: { content: string }) {
   const lines = content.replace(/\r\n/g, "\n").split("\n");
   const nodes: ReactNode[] = [];
@@ -23,7 +35,7 @@ export function MarkdownContent({ content }: { content: string }) {
 
     const heading = /^(#{1,3})\s+(.+)$/.exec(line);
     if (heading) {
-      const text = heading[2];
+      const text = renderInlineMarkdown(heading[2], `heading-${index}`);
       if (heading[1].length === 1) nodes.push(<h2 key={index}>{text}</h2>);
       else if (heading[1].length === 2) nodes.push(<h3 key={index}>{text}</h3>);
       else nodes.push(<h4 key={index}>{text}</h4>);
@@ -31,14 +43,14 @@ export function MarkdownContent({ content }: { content: string }) {
     }
     const listItem = /^[-*]\s+(.+)$/.exec(line);
     if (listItem) {
-      nodes.push(<ul key={index}><li>{listItem[1]}</li></ul>);
+      nodes.push(<ul key={index}><li>{renderInlineMarkdown(listItem[1], `list-${index}`)}</li></ul>);
       return;
     }
     if (line.startsWith("> ")) {
-      nodes.push(<blockquote key={index}>{line.slice(2)}</blockquote>);
+      nodes.push(<blockquote key={index}>{renderInlineMarkdown(line.slice(2), `quote-${index}`)}</blockquote>);
       return;
     }
-    nodes.push(<p key={index}>{line}</p>);
+    nodes.push(<p key={index}>{renderInlineMarkdown(line, `paragraph-${index}`)}</p>);
   });
 
   const unfinishedCode = code as string[] | null;

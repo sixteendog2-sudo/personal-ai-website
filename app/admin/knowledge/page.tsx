@@ -8,7 +8,6 @@ export default function AdminKnowledgePage() {
           <div className="eyebrow">知识库</div>
           <h1>管理可被 AI 检索和引用的个人知识</h1>
         </div>
-        <button className="button">新建知识</button>
       </header>
       <KnowledgeClient />
     </>

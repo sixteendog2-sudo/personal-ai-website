@@ -1,5 +1,5 @@
 import { createHash } from "crypto";
-import { and, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, inArray } from "drizzle-orm";
 import { fileTypeFromBuffer } from "file-type";
 import sharp from "sharp";
 import { getDatabase } from "@/db/client";
@@ -74,19 +74,39 @@ export async function listMediaAssets(ownerId: string) {
   }));
 }
 
-export async function attachMediaToContent(actor: Actor, contentId: string, mediaId: string, sortOrder: number) {
+export async function attachMediaToContent(actor: Actor, contentId: string, mediaId: string, sortOrder: number, replace = false) {
   return getDatabase().transaction(async (tx) => {
     const [content] = await tx.select().from(contentItems).where(and(eq(contentItems.id, contentId), eq(contentItems.ownerId, actor.ownerId))).limit(1);
     const [media] = await tx.select().from(mediaAssets).where(and(eq(mediaAssets.id, mediaId), eq(mediaAssets.ownerId, actor.ownerId), eq(mediaAssets.variant, "original"))).limit(1);
     if (!content || !media) return null;
+    const previous = replace ? await tx.select({ mediaId: contentMedia.mediaId }).from(contentMedia).where(eq(contentMedia.contentId, contentId)) : [];
+    if (replace) await tx.delete(contentMedia).where(eq(contentMedia.contentId, contentId));
     const [link] = await tx.insert(contentMedia).values({ contentId, mediaId, sortOrder }).onConflictDoUpdate({
       target: [contentMedia.contentId, contentMedia.mediaId], set: { sortOrder }
     }).returning();
     await tx.insert(adminAuditLogs).values({
       ownerId: actor.ownerId, adminUserId: actor.adminUserId, action: "content.media.attach",
-      resourceType: "content_item", resourceId: contentId, changes: { mediaId, sortOrder }, ipHash: actor.ipHash
+      resourceType: "content_item", resourceId: contentId, changes: { mediaId, sortOrder, replace }, ipHash: actor.ipHash
     });
-    return link;
+    return { ...link, replacedMediaIds: previous.map((item) => item.mediaId).filter((id) => id !== mediaId) };
+  });
+}
+
+export async function detachMediaFromContent(actor: Actor, contentId: string, mediaId?: string) {
+  return getDatabase().transaction(async (tx) => {
+    const [content] = await tx.select({ id: contentItems.id }).from(contentItems).where(and(
+      eq(contentItems.id, contentId), eq(contentItems.ownerId, actor.ownerId)
+    )).limit(1);
+    if (!content) return null;
+    const conditions = [eq(contentMedia.contentId, contentId)];
+    if (mediaId) conditions.push(eq(contentMedia.mediaId, mediaId));
+    const removed = await tx.delete(contentMedia).where(and(...conditions)).returning({ mediaId: contentMedia.mediaId });
+    await tx.insert(adminAuditLogs).values({
+      ownerId: actor.ownerId, adminUserId: actor.adminUserId, action: "content.media.detach",
+      resourceType: "content_item", resourceId: contentId,
+      changes: { mediaIds: removed.map((item) => item.mediaId) }, ipHash: actor.ipHash
+    });
+    return removed.map((item) => item.mediaId);
   });
 }
 
@@ -104,4 +124,25 @@ export async function getDeliverableMedia(assetId: string, adminOwnerId?: string
       eq(contentItems.status, "published"), eq(contentItems.visibility, "public")
     )).limit(1);
   return allowed ? asset : null;
+}
+
+export async function deleteOrphanedMedia(ownerId: string, originalIds: string[]) {
+  if (originalIds.length === 0) return;
+  const db = getDatabase();
+  const storage = getObjectStorage();
+  for (const originalId of originalIds) {
+    const [usage] = await db.select({ value: count() }).from(contentMedia).where(eq(contentMedia.mediaId, originalId));
+    if (usage.value > 0) continue;
+    const assets = await db.select().from(mediaAssets).where(and(
+      eq(mediaAssets.ownerId, ownerId),
+      inArray(mediaAssets.id, [originalId])
+    ));
+    const children = await db.select().from(mediaAssets).where(and(
+      eq(mediaAssets.ownerId, ownerId), eq(mediaAssets.parentAssetId, originalId)
+    ));
+    const all = [...children, ...assets];
+    await Promise.allSettled(all.map((asset) => storage.delete(asset.storageKey)));
+    if (children.length) await db.delete(mediaAssets).where(inArray(mediaAssets.id, children.map((asset) => asset.id)));
+    await db.delete(mediaAssets).where(and(eq(mediaAssets.id, originalId), eq(mediaAssets.ownerId, ownerId)));
+  }
 }

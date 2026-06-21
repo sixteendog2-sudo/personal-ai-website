@@ -26,7 +26,7 @@ export default async function LifeDetailPage({ params }: { params: Promise<{ id:
         <p>{record.excerpt}</p>
       </section>
       <section className="container section detail-layout">
-        <div className={`photo detail-photo ${record.imageTone}`} />
+        {record.imageUrl ? <img className="photo detail-photo" src={record.imageUrl} alt={record.imageAlt || record.title} /> : <div className={`photo detail-photo ${record.imageTone}`} />}
         <aside className="card">
           <div className="card-body">
             <div className="chips">

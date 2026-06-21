@@ -5,7 +5,7 @@ export function LifeRecordCard({ record }: { record: LifeRecord }) {
   return (
     <article className="card feed-card">
       <Link className="card-link" href={`/life/${record.id}`} aria-label={record.title}>
-        <div className={`photo ${record.imageTone}`} />
+        {record.imageUrl ? <img className="photo" src={record.imageUrl} alt={record.imageAlt || record.title} /> : <div className={`photo ${record.imageTone}`} />}
         <div className="card-body">
           <h3>{record.title}</h3>
           <p>{record.excerpt}</p>
@@ -26,6 +26,7 @@ export function StudyCard({ item }: { item: StudyItem }) {
   return (
     <article className="card">
       <Link className="card-link" href={`/study/${item.id}`} aria-label={item.title}>
+        {item.imageUrl ? <img className="photo" src={item.imageUrl} alt={item.imageAlt || item.title} /> : null}
         <div className="card-body">
           <span className="chip cyan">{item.type}</span>
           <h3 style={{ marginTop: 14 }}>{item.title}</h3>
@@ -47,7 +48,7 @@ export function WorkProjectCard({ project }: { project: WorkProject }) {
   return (
     <article className="card">
       <Link className="card-link" href={`/work/${project.id}`} aria-label={project.title}>
-        <div className={`photo ${project.imageTone}`} />
+        {project.imageUrl ? <img className="photo" src={project.imageUrl} alt={project.imageAlt || project.title} /> : <div className={`photo ${project.imageTone}`} />}
         <div className="card-body">
           <h3>{project.title}</h3>
           <p>{project.summary}</p>

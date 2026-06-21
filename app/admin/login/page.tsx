@@ -15,7 +15,7 @@ export default async function AdminLoginPage({
         <div className="card-body">
           <div className="eyebrow">管理员登录</div>
           <h1 style={{ marginBottom: 8 }}>进入个人 AI 后台</h1>
-          <p>Demo 默认密码是 <strong>demo123456</strong>。上线时请通过环境变量 `ADMIN_PASSWORD` 替换。</p>
+          <p>此区域仅供管理员使用，请输入管理员凭据继续。</p>
           {hasError ? <p className="chip coral">密码不正确，请重试。</p> : null}
           <form action="/api/admin/auth/login" method="post" className="field" style={{ marginTop: 18 }}>
             <input type="hidden" name="next" value={next} />
@@ -33,4 +33,3 @@ export default async function AdminLoginPage({
     </main>
   );
 }
-

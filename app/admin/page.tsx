@@ -38,16 +38,16 @@ export default async function AdminDashboardPage() {
           <table className="table">
             <tbody>
               <tr>
-                <td>把真实个人资料替换 mock 数据</td>
-                <td><span className="chip coral">P0</span></td>
+                <td>定期检查访客问题并沉淀优质知识</td>
+                <td><span className="chip coral">运营</span></td>
               </tr>
               <tr>
-                <td>接入 PostgreSQL + pgvector</td>
-                <td><span className="chip">P0</span></td>
+                <td>部署前配置私有 S3/COS/OSS 图片存储</td>
+                <td><span className="chip">部署</span></td>
               </tr>
               <tr>
-                <td>配置 DeepSeek API Key 并开启真实模型调用</td>
-                <td><span className="chip cyan">P1</span></td>
+                <td>定期备份 PostgreSQL 与对象存储</td>
+                <td><span className="chip cyan">运维</span></td>
               </tr>
             </tbody>
           </table>

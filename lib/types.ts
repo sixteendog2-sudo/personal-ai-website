@@ -41,6 +41,8 @@ export interface LifeRecord extends GovernedContent {
   location: string;
   mood: string;
   imageTone: string;
+  imageUrl?: string;
+  imageAlt?: string;
 }
 
 export interface StudyItem extends GovernedContent {
@@ -51,6 +53,8 @@ export interface StudyItem extends GovernedContent {
   body: string;
   period: string;
   institution: string;
+  imageUrl?: string;
+  imageAlt?: string;
 }
 
 export interface WorkProject extends GovernedContent {
@@ -63,6 +67,8 @@ export interface WorkProject extends GovernedContent {
   result: string;
   period: string;
   imageTone: string;
+  imageUrl?: string;
+  imageAlt?: string;
 }
 
 export interface KnowledgeItem extends GovernedContent {
