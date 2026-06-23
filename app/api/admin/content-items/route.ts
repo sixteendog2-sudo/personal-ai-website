@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ item }, { status: 201 });
   } catch (error) {
     if (typeof error === "object" && error && "code" in error && error.code === "23505") {
-      return NextResponse.json({ error: "Slug already exists" }, { status: 409 });
+      return NextResponse.json({ error: "Content identifier conflict, please retry" }, { status: 409 });
     }
     throw error;
   }

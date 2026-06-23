@@ -3,6 +3,7 @@ import { getDatabase } from "@/db/client";
 import { adminAuditLogs, modelSettings, ownerProfiles, promptTemplates } from "@/db/schema";
 import { env } from "@/lib/config";
 import { DEFAULT_OWNER_ID } from "@/lib/tenant";
+import { decryptSecret, encryptSecret } from "@/lib/secrets";
 
 type Actor = { ownerId: string; adminUserId: string; ipHash: string };
 
@@ -26,19 +27,48 @@ export async function updateOwnerProfile(actor: Actor, input: Partial<typeof own
 }
 
 export async function listModelSettings(ownerId: string) {
-  return getDatabase().select().from(modelSettings).where(eq(modelSettings.ownerId, ownerId)).orderBy(desc(modelSettings.updatedAt));
+  const rows = await getDatabase().select().from(modelSettings).where(eq(modelSettings.ownerId, ownerId)).orderBy(desc(modelSettings.updatedAt));
+  return rows.map(({ apiKeyEncrypted: _secret, ...row }) => ({ ...row, hasApiKey: Boolean(_secret) }));
 }
 
-export async function activateModelSetting(actor: Actor, input: Omit<typeof modelSettings.$inferInsert, "id" | "ownerId" | "isActive">) {
+export async function activateModelSetting(actor: Actor, input: {
+  provider: string;
+  baseUrl: string;
+  model: string;
+  temperatureMilli: number;
+  maxTokens: number;
+  apiKey?: string;
+  keepExistingApiKey?: boolean;
+}) {
   return getDatabase().transaction(async (tx) => {
+    const [active] = await tx.select().from(modelSettings).where(and(
+      eq(modelSettings.ownerId, actor.ownerId), eq(modelSettings.isActive, true)
+    )).orderBy(desc(modelSettings.updatedAt)).limit(1);
     await tx.update(modelSettings).set({ isActive: false, updatedAt: new Date() }).where(eq(modelSettings.ownerId, actor.ownerId));
-    const [setting] = await tx.insert(modelSettings).values({ ownerId: actor.ownerId, ...input, isActive: true }).returning();
+    const apiKeyEncrypted = input.apiKey
+      ? encryptSecret(input.apiKey)
+      : input.keepExistingApiKey ? active?.apiKeyEncrypted : null;
+    const apiKeyLastFour = input.apiKey
+      ? input.apiKey.slice(-4)
+      : input.keepExistingApiKey ? active?.apiKeyLastFour : null;
+    const [setting] = await tx.insert(modelSettings).values({
+      ownerId: actor.ownerId,
+      provider: input.provider,
+      baseUrl: input.baseUrl,
+      model: input.model,
+      temperatureMilli: input.temperatureMilli,
+      maxTokens: input.maxTokens,
+      apiKeyEncrypted,
+      apiKeyLastFour,
+      isActive: true
+    }).returning();
     await tx.insert(adminAuditLogs).values({
       ownerId: actor.ownerId, adminUserId: actor.adminUserId, action: "model.activate",
       resourceType: "model_setting", resourceId: setting.id,
       changes: { provider: setting.provider, model: setting.model, baseUrl: setting.baseUrl }, ipHash: actor.ipHash
     });
-    return setting;
+    const { apiKeyEncrypted: _secret, ...safeSetting } = setting;
+    return { ...safeSetting, hasApiKey: Boolean(_secret) };
   });
 }
 
@@ -79,6 +109,7 @@ export async function getAiRuntimeSettings(scene: string) {
     provider: model?.provider ?? "deepseek",
     baseUrl: model?.baseUrl ?? env.DEEPSEEK_BASE_URL,
     model: model?.model ?? env.DEEPSEEK_CHAT_MODEL,
+    apiKey: model?.apiKeyEncrypted ? decryptSecret(model.apiKeyEncrypted) : undefined,
     temperature: (model?.temperatureMilli ?? 700) / 1000,
     maxTokens: model?.maxTokens ?? 1200,
     systemPrompt: prompt?.systemPrompt,

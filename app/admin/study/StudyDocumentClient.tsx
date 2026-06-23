@@ -5,22 +5,16 @@ import { useEffect, useState } from "react";
 import { FileText, Upload } from "lucide-react";
 
 type AdminStudyRow = {
-  id: string; slug: string; title: string; summary: string | null;
+  id: string; title: string; summary: string | null;
   status: "draft" | "published" | "archived";
   visibility: "public" | "private" | "unlisted";
   metadata: Record<string, unknown>;
   updatedAt: string;
 };
 
-function makeSlug(value: string) {
-  const slug = value.toLowerCase().replace(/\.[^.]+$/, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  return slug || "study-" + Date.now().toString(36);
-}
-
 export function StudyDocumentClient() {
   const [items, setItems] = useState<AdminStudyRow[]>([]);
   const [title, setTitle] = useState("");
-  const [slug, setSlug] = useState("");
   const [body, setBody] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -47,7 +41,6 @@ export function StudyDocumentClient() {
     }
     setBody(await file.text());
     if (!title) setTitle(file.name.replace(/\.(md|markdown|txt)$/i, ""));
-    if (!slug) setSlug(makeSlug(file.name));
     setMessage("文档已读取，可以继续编辑后保存。");
   }
 
@@ -61,7 +54,7 @@ export function StudyDocumentClient() {
       const payload = await response.json() as { item?: AdminStudyRow; error?: string };
       if (!response.ok || !payload.item) throw new Error(payload.error || "保存失败");
       setItems((current) => [payload.item as AdminStudyRow, ...current]);
-      setTitle(""); setSlug(""); setBody(""); form.reset();
+      setTitle(""); setBody(""); form.reset();
       setMessage("学习记录已保存。");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "保存失败，请稍后重试。");
@@ -88,7 +81,6 @@ export function StudyDocumentClient() {
           </div>
           <div className="form-grid" style={{ marginTop: 18 }}>
             <div className="field"><label htmlFor="study-title">标题</label><input id="study-title" name="title" required maxLength={240} value={title} onChange={(event) => setTitle(event.target.value)} /></div>
-            <div className="field"><label htmlFor="study-slug">访问路径</label><input id="study-slug" name="slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value={slug} onChange={(event) => setSlug(event.target.value)} placeholder="my-study-note" /></div>
             <div className="field"><label htmlFor="study-type">类型</label><select id="study-type" name="studyType" defaultValue="document"><option value="document">学习文档</option><option value="course">课程</option><option value="research_interest">研究兴趣</option><option value="certificate">证书</option><option value="project">项目学习</option></select></div>
             <div className="field"><label htmlFor="study-period">学习周期</label><input id="study-period" name="period" placeholder="2026.06 - 至今" /></div>
             <div className="field"><label htmlFor="study-institution">机构或来源</label><input id="study-institution" name="institution" placeholder="学校、课程平台或自学" /></div>

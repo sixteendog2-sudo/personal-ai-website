@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Bot, Building2, CalendarDays, GraduationCap } from "lucide-react";
 import { MarkdownContent } from "@/components/MarkdownContent";
+import { ImageCarousel } from "@/components/ImageCarousel";
 import { SiteNav } from "@/components/SiteNav";
 import { getStudyItem } from "@/lib/content-store";
 
@@ -22,7 +23,7 @@ export default async function StudyDetailPage({ params }: { params: Promise<{ id
       </section>
       <section className="container section detail-layout">
         <article className="card">
-          {item.imageUrl ? <img className="photo" src={item.imageUrl} alt={item.imageAlt || item.title} /> : null}
+          <ImageCarousel images={item.images ?? []} title={item.title} detail />
           <div className="card-body">
             <MarkdownContent content={item.body} />
           </div>

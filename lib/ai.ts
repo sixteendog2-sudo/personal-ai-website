@@ -69,9 +69,10 @@ export async function generateAiAnswer({
   const citations = toCitations(retrieved);
   const knowledgeContext = buildKnowledgeContext(retrieved);
 
-  const apiKey = env.DEEPSEEK_API_KEY;
-  const baseUrl = runtimeSettings.baseUrl;
+  const apiKey = runtimeSettings.apiKey ?? env.DEEPSEEK_API_KEY;
+  const baseUrl = runtimeSettings.baseUrl.replace(/\/$/, "");
   const model = runtimeSettings.model;
+  const provider = runtimeSettings.provider;
 
   if (!apiKey) {
     await recordAiCall({ sessionId, provider: "local-demo", model: "mock-rag", latencyMs: Date.now() - startedAt, success: true }).catch(() => undefined);
@@ -111,7 +112,7 @@ export async function generateAiAnswer({
     });
 
     if (!response.ok) {
-      throw new Error(`DeepSeek API failed: ${response.status}`);
+      throw new Error(`${provider} API failed: ${response.status}`);
     }
 
     const payload = (await response.json()) as {
@@ -120,7 +121,7 @@ export async function generateAiAnswer({
     };
 
     await recordAiCall({
-      sessionId, provider: "deepseek", model,
+      sessionId, provider, model,
       promptTokens: payload.usage?.prompt_tokens,
       completionTokens: payload.usage?.completion_tokens,
       latencyMs: Date.now() - startedAt,
@@ -130,13 +131,13 @@ export async function generateAiAnswer({
     return {
       answer: payload.choices?.[0]?.message?.content ?? localAnswer(message, citations, topic),
       citations,
-      provider: "deepseek",
+      provider,
       model
     };
   } catch (error) {
     const errorCode = error instanceof Error ? error.name : "unknown";
     await recordAiCall({
-      sessionId, provider: "deepseek", model,
+      sessionId, provider, model,
       latencyMs: Date.now() - startedAt, success: false, errorCode
     }).catch(() => undefined);
     return {

@@ -2,6 +2,9 @@ import { mkdir, readFile, rename, rm, writeFile } from "fs/promises";
 import path from "path";
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { env } from "@/lib/config";
+import { eq } from "drizzle-orm";
+import { getDatabase } from "@/db/client";
+import { objectBlobs } from "@/db/schema";
 
 export type StoredObject = { key: string; body: Uint8Array; contentType: string };
 
@@ -67,9 +70,37 @@ class S3Storage implements ObjectStorage {
   }
 }
 
+class DatabaseStorage implements ObjectStorage {
+  async put(object: StoredObject) {
+    await getDatabase().insert(objectBlobs).values({
+      key: object.key,
+      body: Buffer.from(object.body),
+      contentType: object.contentType
+    }).onConflictDoUpdate({
+      target: objectBlobs.key,
+      set: { body: Buffer.from(object.body), contentType: object.contentType, updatedAt: new Date() }
+    });
+  }
+
+  async get(key: string) {
+    const [object] = await getDatabase().select({ body: objectBlobs.body }).from(objectBlobs)
+      .where(eq(objectBlobs.key, key)).limit(1);
+    if (!object) throw new Error("Stored object not found");
+    return new Uint8Array(object.body);
+  }
+
+  async delete(key: string) {
+    await getDatabase().delete(objectBlobs).where(eq(objectBlobs.key, key));
+  }
+}
+
 let storage: ObjectStorage | undefined;
 
 export function getObjectStorage(): ObjectStorage {
-  storage ??= env.STORAGE_DRIVER === "s3" ? new S3Storage() : new LocalStorage();
+  storage ??= env.STORAGE_DRIVER === "s3"
+    ? new S3Storage()
+    : env.STORAGE_DRIVER === "local"
+      ? new LocalStorage()
+      : new DatabaseStorage();
   return storage;
 }

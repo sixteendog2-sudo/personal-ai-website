@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Bot, BriefcaseBusiness } from "lucide-react";
 import { MarkdownContent } from "@/components/MarkdownContent";
+import { ImageCarousel } from "@/components/ImageCarousel";
 import { SiteNav } from "@/components/SiteNav";
 import { getWorkProject } from "@/lib/content-store";
 
@@ -24,7 +25,7 @@ export default async function WorkDetailPage({ params }: { params: Promise<{ id:
         <p>{project.summary}</p>
       </section>
       <section className="container section detail-layout">
-        {project.imageUrl ? <img className="photo detail-photo" src={project.imageUrl} alt={project.imageAlt || project.title} /> : <div className={`photo detail-photo ${project.imageTone}`} />}
+        <ImageCarousel images={project.images ?? []} title={project.title} tone={project.imageTone} detail />
         <aside className="card">
           <div className="card-body">
             <BriefcaseBusiness color="#00a88a" size={28} />

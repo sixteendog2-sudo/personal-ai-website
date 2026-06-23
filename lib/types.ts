@@ -11,12 +11,15 @@ export type SourceType =
 
 export type Topic = "default" | "study" | "life" | "work" | "admission" | "career" | "social";
 
+export type ContentImage = { url: string; alt: string };
+
 export interface GovernedContent {
   ownerId: string;
   visibility: Visibility;
   status: PublishStatus;
   isAiUsable: boolean;
   tags: string[];
+  updatedAt?: string;
 }
 
 export interface Profile extends GovernedContent {
@@ -43,6 +46,7 @@ export interface LifeRecord extends GovernedContent {
   imageTone: string;
   imageUrl?: string;
   imageAlt?: string;
+  images?: ContentImage[];
 }
 
 export interface StudyItem extends GovernedContent {
@@ -55,6 +59,7 @@ export interface StudyItem extends GovernedContent {
   institution: string;
   imageUrl?: string;
   imageAlt?: string;
+  images?: ContentImage[];
 }
 
 export interface WorkProject extends GovernedContent {
@@ -69,6 +74,7 @@ export interface WorkProject extends GovernedContent {
   imageTone: string;
   imageUrl?: string;
   imageAlt?: string;
+  images?: ContentImage[];
 }
 
 export interface KnowledgeItem extends GovernedContent {

@@ -3,10 +3,28 @@ import { Bot, BriefcaseBusiness, GraduationCap, Image, MessageCircle, Sparkles }
 import { LifeRecordCard, StudyCard, WorkProjectCard } from "@/components/Cards";
 import { SectionHeading } from "@/components/SectionHeading";
 import { SiteNav } from "@/components/SiteNav";
-import { lifeRecords, profile, studyItems, workProjects } from "@/lib/mock-data";
+import { profile as fallbackProfile } from "@/lib/mock-data";
+import { listLifeRecords, listStudyItems, listWorkProjects } from "@/lib/content-store";
+import { getOwnerProfile } from "@/lib/settings-store";
+import type { LifeRecord, StudyItem, WorkProject } from "@/lib/types";
 
-export default function HomePage() {
-  const publicLife = lifeRecords.filter((item) => item.visibility === "public" && item.status === "published");
+export const dynamic = "force-dynamic";
+
+type RecentItem =
+  | { type: "life"; updatedAt: string; item: LifeRecord }
+  | { type: "study"; updatedAt: string; item: StudyItem }
+  | { type: "work"; updatedAt: string; item: WorkProject };
+
+export default async function HomePage() {
+  const [lifeRecords, studyItems, workProjects, storedProfile] = await Promise.all([
+    listLifeRecords(), listStudyItems(), listWorkProjects(), getOwnerProfile()
+  ]);
+  const profile = storedProfile?.visibility === "public" ? storedProfile : fallbackProfile;
+  const recent = [
+    ...lifeRecords.map((item): RecentItem => ({ type: "life", updatedAt: item.updatedAt ?? "", item })),
+    ...studyItems.map((item): RecentItem => ({ type: "study", updatedAt: item.updatedAt ?? "", item })),
+    ...workProjects.map((item): RecentItem => ({ type: "work", updatedAt: item.updatedAt ?? "", item }))
+  ].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 6);
 
   return (
     <main className="page">
@@ -54,18 +72,20 @@ export default function HomePage() {
       <section className="container section">
         <SectionHeading
           eyebrow="最近更新"
-          title="生活记录不是相册，是会进入知识库的记忆"
-          description="公开且允许 AI 引用的生活记录，会成为访客提问时的真实上下文。"
+          title="每次上传与编辑，都会同步出现在这里"
+          description="工作、生活、学习按数据库更新时间统一排序，发布后无需手动维护首页。"
           action={
             <Link className="button ghost" href="/life">
-              查看全部
+              查看生活记录
             </Link>
           }
         />
         <div className="feed-grid">
-          {publicLife.slice(0, 3).map((record) => (
-            <LifeRecordCard key={record.id} record={record} />
-          ))}
+          {recent.map((entry) => entry.type === "life"
+            ? <LifeRecordCard key={`life-${entry.item.id}`} record={entry.item} />
+            : entry.type === "study"
+              ? <StudyCard key={`study-${entry.item.id}`} item={entry.item} />
+              : <WorkProjectCard key={`work-${entry.item.id}`} project={entry.item} />)}
         </div>
       </section>
 

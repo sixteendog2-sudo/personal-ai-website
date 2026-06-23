@@ -45,14 +45,17 @@ export function InfiniteContentGrid<T extends keyof ContentByType>({
     loadingRef.current = true;
     setLoading(true);
     setError("");
+
     try {
       const response = await fetch(endpoints[type] + "?limit=6&cursor=" + encodeURIComponent(cursor));
       if (!response.ok) throw new Error("Could not load more content");
+
       const page = await response.json() as {
         items: ContentByType[T][];
         nextCursor: string | null;
         hasMore: boolean;
       };
+
       setItems((current) => {
         const known = new Set(current.map((item) => item.id));
         return [...current, ...page.items.filter((item) => !known.has(item.id))];
@@ -70,9 +73,11 @@ export function InfiniteContentGrid<T extends keyof ContentByType>({
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel || !hasMore) return;
+
     const observer = new IntersectionObserver((entries) => {
       if (entries.some((entry) => entry.isIntersecting)) void loadMore();
     }, { rootMargin: "320px 0px" });
+
     observer.observe(sentinel);
     return () => observer.disconnect();
   }, [hasMore, loadMore]);
@@ -98,6 +103,7 @@ export function InfiniteContentGrid<T extends keyof ContentByType>({
           ))}
         </div>
       ) : null}
+
       <div className={type === "life" ? "feed-grid" : "grid two"} data-testid={type + "-content-grid"}>
         {visibleItems.map((item) => {
           if (type === "life") return <LifeRecordCard key={item.id} record={item as LifeRecord} />;
@@ -105,9 +111,11 @@ export function InfiniteContentGrid<T extends keyof ContentByType>({
           return <WorkProjectCard key={item.id} project={item as WorkProject} />;
         })}
       </div>
+
       {type === "life" && visibleItems.length === 0 && !loading ? (
         <p className="load-more-state" role="status">当前分类还没有公开记录</p>
       ) : null}
+
       <div className="load-more-state" ref={sentinelRef} aria-live="polite" data-testid={type + "-load-state"}>
         {loading && "正在加载更多…"}
         {!loading && error && (

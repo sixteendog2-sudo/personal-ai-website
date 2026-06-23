@@ -1,11 +1,11 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
+import { randomUUID } from "crypto";
 import { getDatabase } from "@/db/client";
 import { adminAuditLogs, contentItems, contentMedia, knowledgeChunks, knowledgeItems, mediaAssets } from "@/db/schema";
 import { chunkKnowledgeText, estimateTokenCount } from "@/lib/knowledge-chunks";
 
 export type ContentWriteInput = {
   type: "life" | "study" | "work";
-  slug: string;
   title: string;
   summary?: string | null;
   body: string;
@@ -33,7 +33,7 @@ export async function listAdminContent(ownerId: string, filters: { type?: string
     media: links.filter((link) => link.contentId === item.id).sort((a, b) => a.sortOrder - b.sortOrder).map((link) => {
       const original = assets.find((asset) => asset.id === link.mediaId);
       const thumbnail = assets.find((asset) => asset.parentAssetId === link.mediaId) ?? null;
-      return original ? { ...original, thumbnail } : null;
+      return original ? { ...original, thumbnail, sortOrder: link.sortOrder } : null;
     }).filter(Boolean)
   }));
 }
@@ -46,8 +46,11 @@ export async function getAdminContent(ownerId: string, id: string) {
 
 export async function createAdminContent(actor: AuditActor, input: ContentWriteInput) {
   return getDatabase().transaction(async (tx) => {
+    const id = randomUUID();
     const [item] = await tx.insert(contentItems).values({
+      id,
       ownerId: actor.ownerId,
+      slug: id,
       ...input,
       publishedAt: input.status === "published" ? new Date() : null
     }).returning();

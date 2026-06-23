@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import type { Citation } from "../lib/types";
 import {
   boolean,
+  customType,
   index,
   integer,
   jsonb,
@@ -20,6 +21,8 @@ const timestamps = {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
 };
+
+const bytea = customType<{ data: Buffer }>({ dataType: () => "bytea" });
 
 export const contentStatus = pgEnum("content_status", ["draft", "published", "archived"]);
 export const visibility = pgEnum("visibility", ["public", "private", "unlisted"]);
@@ -96,6 +99,14 @@ export const mediaAssets = pgTable("media_assets", {
   uniqueIndex("media_assets_storage_key_uidx").on(table.storageKey),
   index("media_assets_owner_parent_idx").on(table.ownerId, table.parentAssetId)
 ]);
+
+export const objectBlobs = pgTable("object_blobs", {
+  key: text("key").primaryKey(),
+  body: bytea("body").notNull(),
+  contentType: varchar("content_type", { length: 120 }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+});
 
 export const contentMedia = pgTable("content_media", {
   contentId: uuid("content_id").notNull().references(() => contentItems.id, { onDelete: "cascade" }),
@@ -202,6 +213,8 @@ export const modelSettings = pgTable("model_settings", {
   provider: varchar("provider", { length: 50 }).notNull(),
   baseUrl: text("base_url").notNull(),
   model: varchar("model", { length: 120 }).notNull(),
+  apiKeyEncrypted: text("api_key_encrypted"),
+  apiKeyLastFour: varchar("api_key_last_four", { length: 4 }),
   temperatureMilli: integer("temperature_milli").notNull().default(700),
   maxTokens: integer("max_tokens").notNull().default(1200),
   isActive: boolean("is_active").notNull().default(false),

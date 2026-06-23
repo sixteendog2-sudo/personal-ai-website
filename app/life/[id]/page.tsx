@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Bot, CalendarDays, MapPin } from "lucide-react";
 import { MarkdownContent } from "@/components/MarkdownContent";
+import { ImageCarousel } from "@/components/ImageCarousel";
 import { SiteNav } from "@/components/SiteNav";
 import { getLifeRecord, listLifeRecordsPage } from "@/lib/content-store";
 
@@ -26,7 +27,7 @@ export default async function LifeDetailPage({ params }: { params: Promise<{ id:
         <p>{record.excerpt}</p>
       </section>
       <section className="container section detail-layout">
-        {record.imageUrl ? <img className="photo detail-photo" src={record.imageUrl} alt={record.imageAlt || record.title} /> : <div className={`photo detail-photo ${record.imageTone}`} />}
+        <ImageCarousel images={record.images ?? []} title={record.title} tone={record.imageTone} detail />
         <aside className="card">
           <div className="card-body">
             <div className="chips">

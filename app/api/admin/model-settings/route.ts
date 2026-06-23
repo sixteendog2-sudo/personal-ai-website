@@ -5,9 +5,11 @@ import { getRequestIpHash } from "@/lib/request-context";
 import { activateModelSetting, listModelSettings } from "@/lib/settings-store";
 
 const modelSchema = z.object({
-  provider: z.literal("deepseek"),
+  provider: z.string().trim().min(1).max(50),
   baseUrl: z.url().refine((value) => new URL(value).protocol === "https:", "HTTPS is required"),
   model: z.string().trim().min(1).max(120),
+  apiKey: z.string().trim().max(500).optional(),
+  keepExistingApiKey: z.boolean().default(false),
   temperature: z.number().min(0).max(2),
   maxTokens: z.number().int().min(64).max(32000)
 });
@@ -25,7 +27,8 @@ export async function PUT(request: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: "Invalid model setting", fields: z.flattenError(parsed.error).fieldErrors }, { status: 400 });
   const item = await activateModelSetting({ ...session, ipHash: getRequestIpHash(request) }, {
     provider: parsed.data.provider, baseUrl: parsed.data.baseUrl, model: parsed.data.model,
-    temperatureMilli: Math.round(parsed.data.temperature * 1000), maxTokens: parsed.data.maxTokens
+    temperatureMilli: Math.round(parsed.data.temperature * 1000), maxTokens: parsed.data.maxTokens,
+    apiKey: parsed.data.apiKey || undefined, keepExistingApiKey: parsed.data.keepExistingApiKey
   });
   return NextResponse.json({ item }, { status: 201 });
 }

@@ -7,11 +7,10 @@ import { FileText, ImagePlus, Pencil, Plus, Save, Trash2, X } from "lucide-react
 type ContentType = "life" | "study" | "work";
 type Status = "draft" | "published" | "archived";
 type Visibility = "private" | "unlisted" | "public";
-type AdminMedia = { id: string; altText: string | null; thumbnail: { id: string } | null };
+type AdminMedia = { id: string; altText: string | null; sortOrder: number; thumbnail: { id: string } | null };
 type AdminContent = {
   id: string;
   type: ContentType;
-  slug: string;
   title: string;
   summary: string | null;
   body: string;
@@ -24,7 +23,7 @@ type AdminContent = {
 };
 
 type FormState = {
-  slug: string; title: string; summary: string; body: string; status: Status; visibility: Visibility;
+  title: string; summary: string; body: string; status: Status; visibility: Visibility;
   happenedAt: string; tags: string; isAiUsable: boolean; location: string; mood: string;
   studyType: string; period: string; institution: string; role: string; techStack: string; result: string;
 };
@@ -37,7 +36,7 @@ const labels = {
 
 function emptyForm(type: ContentType): FormState {
   return {
-    slug: "", title: "", summary: "", body: "", status: "draft", visibility: "private", happenedAt: "",
+    title: "", summary: "", body: "", status: "draft", visibility: "private", happenedAt: "",
     tags: "", isAiUsable: false, location: "", mood: "", studyType: type === "study" ? "document" : "",
     period: "", institution: "", role: "", techStack: "", result: ""
   };
@@ -50,7 +49,7 @@ function strings(value: unknown) {
 function formFromItem(item: AdminContent): FormState {
   const metadata = item.metadata;
   return {
-    slug: item.slug, title: item.title, summary: item.summary ?? "", body: item.body, status: item.status,
+    title: item.title, summary: item.summary ?? "", body: item.body, status: item.status,
     visibility: item.visibility, happenedAt: item.happenedAt?.slice(0, 10) ?? "", tags: strings(metadata.tags),
     isAiUsable: metadata.isAiUsable === true, location: String(metadata.location ?? ""), mood: String(metadata.mood ?? ""),
     studyType: String(metadata.studyType ?? "document"), period: String(metadata.period ?? ""),
@@ -63,16 +62,11 @@ function splitTags(value: string) {
   return value.split(/[,，]/).map((item) => item.trim()).filter(Boolean).slice(0, 20);
 }
 
-function makeSlug(value: string) {
-  const slug = value.toLowerCase().replace(/\.[^.]+$/, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  return slug || `record-${Date.now().toString(36)}`;
-}
-
 export function AdminContentManager({ type }: { type: ContentType }) {
   const [items, setItems] = useState<AdminContent[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(() => emptyForm(type));
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -98,27 +92,45 @@ export function AdminContentManager({ type }: { type: ContentType }) {
   }
 
   function startNew() {
-    setEditingId(null); setForm(emptyForm(type)); setImageFile(null); setMessage("");
+    setEditingId(null); setForm(emptyForm(type)); setImageFiles([]); setMessage("");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function startEdit(item: AdminContent) {
-    setEditingId(item.id); setForm(formFromItem(item)); setImageFile(null); setMessage("");
+    setEditingId(item.id); setForm(formFromItem(item)); setImageFiles([]); setMessage("");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function readDocument(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { setMessage("文档不能超过 5 MB。"); return; }
-    const body = await file.text();
-    setForm((current) => ({
-      ...current,
-      body,
-      title: current.title || file.name.replace(/\.(md|markdown|txt)$/i, ""),
-      slug: current.slug || makeSlug(file.name)
-    }));
-    setMessage("文档已读取，请确认内容后保存。");
+    if (file.size > 10 * 1024 * 1024) { setMessage("文档不能超过 10 MB。"); return; }
+    setMessage("正在解析文档…");
+    const upload = new FormData(); upload.set("file", file);
+    try {
+      const response = await fetch("/api/admin/study-documents/parse", { method: "POST", body: upload });
+      const payload = await response.json() as { body?: string; warnings?: string[]; error?: string };
+      if (!response.ok || !payload.body) throw new Error(payload.error || "文档解析失败");
+      setForm((current) => ({
+        ...current,
+        body: payload.body!,
+        title: current.title || file.name.replace(/\.(md|markdown|txt|docx)$/i, "")
+      }));
+      setMessage(payload.warnings?.length ? "文档已解析，部分复杂格式已转换为纯文本，请确认正文。" : "文档已解析到知识库正文，请确认后保存。");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "文档解析失败");
+    }
+  }
+
+  function selectImages(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+    const existingCount = editingId ? (items.find((item) => item.id === editingId)?.media?.length ?? 0) : 0;
+    const available = Math.max(0, 12 - existingCount);
+    const selected = files.slice(0, available);
+    setImageFiles(selected);
+    if (available === 0) setMessage("这条内容已有 12 张图片，请先移除后再添加。");
+    else if (files.length > available) setMessage(`每条内容最多 12 张，已选择前 ${available} 张。`);
+    else setMessage(selected.length ? `已选择 ${selected.length} 张图片。` : "");
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -128,7 +140,7 @@ export function AdminContentManager({ type }: { type: ContentType }) {
     if (type === "study") Object.assign(metadata, { studyType: form.studyType, period: form.period, institution: form.institution });
     if (type === "work") Object.assign(metadata, { role: form.role, techStack: splitTags(form.techStack), result: form.result, period: form.period });
     const payload = {
-      type, slug: form.slug, title: form.title, summary: form.summary || null, body: form.body,
+      type, title: form.title, summary: form.summary || null, body: form.body,
       status: form.status, visibility: form.visibility,
       happenedAt: form.happenedAt ? new Date(`${form.happenedAt}T12:00:00+08:00`).toISOString() : null,
       metadata
@@ -139,19 +151,20 @@ export function AdminContentManager({ type }: { type: ContentType }) {
       });
       const saved = await response.json() as { item?: AdminContent; error?: string };
       if (!response.ok || !saved.item) throw new Error(saved.error || "保存失败");
-      if (imageFile) {
-        const mediaForm = new FormData(); mediaForm.set("file", imageFile); mediaForm.set("altText", form.title);
+      const existingCount = editingId ? (items.find((item) => item.id === editingId)?.media?.length ?? 0) : 0;
+      for (const [index, imageFile] of imageFiles.entries()) {
+        const mediaForm = new FormData(); mediaForm.set("file", imageFile); mediaForm.set("altText", `${form.title} - ${existingCount + index + 1}`);
         const mediaResponse = await fetch("/api/admin/media-assets", { method: "POST", body: mediaForm });
         const mediaPayload = await mediaResponse.json() as { item?: { original: { id: string } }; error?: string };
         if (!mediaResponse.ok || !mediaPayload.item) throw new Error(mediaPayload.error || "图片上传失败");
         const linkResponse = await fetch(`/api/admin/content-items/${saved.item.id}/media`, {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ mediaId: mediaPayload.item.original.id, sortOrder: 0, replace: true })
+          body: JSON.stringify({ mediaId: mediaPayload.item.original.id, sortOrder: existingCount + index, replace: false })
         });
         if (!linkResponse.ok) throw new Error("图片已上传，但绑定内容失败");
       }
-      setMessage(editingId ? "内容已更新，文本知识已同步。" : "内容已创建，文本知识已同步。");
-      setEditingId(null); setForm(emptyForm(type)); setImageFile(null); await load();
+      setMessage(`${editingId ? "内容已更新" : "内容已创建"}，${imageFiles.length ? `${imageFiles.length} 张图片已保存，` : ""}文本知识已同步。`);
+      setEditingId(null); setForm(emptyForm(type)); setImageFiles([]); await load();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "保存失败");
     } finally { setSaving(false); }
@@ -165,13 +178,13 @@ export function AdminContentManager({ type }: { type: ContentType }) {
     setMessage("内容及关联文本知识已删除。"); await load();
   }
 
-  async function removeImage() {
-    if (!editingId || !window.confirm("确定移除当前图片吗？未被其他内容使用的原图和缩略图会一并删除。")) return;
+  async function removeImage(mediaId: string) {
+    if (!editingId || !window.confirm("确定移除这张图片吗？未被其他内容使用的原图和缩略图会一并删除。")) return;
     const response = await fetch(`/api/admin/content-items/${editingId}/media`, {
-      method: "DELETE", headers: { "Content-Type": "application/json" }, body: "{}"
+      method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mediaId })
     });
     if (!response.ok) { setMessage("图片移除失败。"); return; }
-    setMessage("当前图片已移除。"); setImageFile(null); await load();
+    setMessage("图片已移除。"); await load();
   }
 
   const config = labels[type];
@@ -187,11 +200,12 @@ export function AdminContentManager({ type }: { type: ContentType }) {
           {editingId ? <button className="button ghost" type="button" onClick={startNew}><X size={16} />取消编辑</button> : null}
         </div>
         <form onSubmit={submit}>
-          {type === "study" ? <div className="document-upload"><FileText size={22} /><div><strong>导入学习文档</strong><p>支持 .md、.markdown、.txt，最大 5 MB。</p></div><input aria-label="导入学习文档" type="file" accept=".md,.markdown,.txt,text/plain,text/markdown" onChange={readDocument} /></div> : null}
-          <div className="document-upload" style={{ marginTop: type === "study" ? 12 : 0 }}><ImagePlus size={22} /><div><strong>{editingId ? "替换封面图片" : "上传封面图片"}</strong><p>JPEG、PNG、WebP，最大 15 MB；图片不会进入 AI 知识库。</p></div><input aria-label="上传封面图片" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setImageFile(event.target.files?.[0] ?? null)} />{editingId && items.find((item) => item.id === editingId)?.media?.length ? <button className="button ghost" type="button" onClick={() => void removeImage()}>移除当前图片</button> : null}</div>
+          {type === "study" ? <div className="document-upload"><FileText size={22} /><div><strong>导入知识库正文</strong><p>支持 Markdown、TXT、Word (.docx)，最大 10 MB；解析后可继续编辑。</p></div><input aria-label="导入学习文档" type="file" accept=".md,.markdown,.txt,.docx,text/plain,text/markdown,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={readDocument} /></div> : null}
+          <div className="document-upload" style={{ marginTop: type === "study" ? 12 : 0 }}><ImagePlus size={22} /><div><strong>{editingId ? "继续添加图片" : "上传多张图片"}</strong><p>可一次选择多张 JPEG、PNG、WebP；每张最大 15 MB，每条内容最多 12 张。</p></div><input aria-label="上传多张图片" type="file" multiple accept="image/jpeg,image/png,image/webp" onChange={selectImages} /></div>
+          {imageFiles.length ? <div className="pending-media-list">{imageFiles.map((file, index) => <span className="chip cyan" key={`${file.name}-${index}`}>{index + 1}. {file.name}</span>)}</div> : null}
+          {editingId && items.find((item) => item.id === editingId)?.media?.length ? <div className="admin-media-grid">{items.find((item) => item.id === editingId)!.media!.map((media, index) => <figure key={media.id}><img src={`/api/media/${media.thumbnail?.id ?? media.id}`} alt={media.altText || `${form.title} ${index + 1}`} /><figcaption><span>{index + 1}</span><button className="button ghost" type="button" onClick={() => void removeImage(media.id)}>移除</button></figcaption></figure>)}</div> : null}
           <div className="form-grid" style={{ marginTop: 18 }}>
             <div className="field"><label htmlFor={`${type}-title`}>标题</label><input id={`${type}-title`} required maxLength={240} value={form.title} onChange={(event) => update("title", event.target.value)} /></div>
-            <div className="field"><label htmlFor={`${type}-slug`}>访问路径</label><input id={`${type}-slug`} required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="my-record" value={form.slug} onChange={(event) => update("slug", event.target.value)} /></div>
             <div className="field"><label htmlFor={`${type}-status`}>状态</label><select id={`${type}-status`} value={form.status} onChange={(event) => update("status", event.target.value as Status)}><option value="draft">草稿</option><option value="published">发布</option><option value="archived">归档</option></select></div>
             <div className="field"><label htmlFor={`${type}-visibility`}>可见范围</label><select id={`${type}-visibility`} value={form.visibility} onChange={(event) => update("visibility", event.target.value as Visibility)}><option value="private">私密</option><option value="unlisted">不公开列出</option><option value="public">公开</option></select></div>
             {type === "life" ? <><div className="field"><label>发生日期</label><input type="date" value={form.happenedAt} onChange={(event) => update("happenedAt", event.target.value)} /></div><div className="field"><label>地点</label><input value={form.location} onChange={(event) => update("location", event.target.value)} /></div><div className="field"><label>心情</label><input value={form.mood} onChange={(event) => update("mood", event.target.value)} /></div></> : null}
@@ -211,7 +225,7 @@ export function AdminContentManager({ type }: { type: ContentType }) {
         {loading ? <p className="prose">正在加载…</p> : items.length === 0 ? <p className="prose">还没有记录。</p> : <div className="admin-content-list">{items.map((item) => {
           const thumbnailId = item.media?.[0]?.thumbnail?.id;
           return <article className="admin-content-row" key={item.id}>
-            {thumbnailId ? <img className="admin-content-thumb" src={`/api/media/${thumbnailId}`} alt={item.media?.[0]?.altText || item.title} /> : <div className="admin-content-thumb empty">无图片</div>}
+            <div className="admin-thumb-wrap">{thumbnailId ? <img className="admin-content-thumb" src={`/api/media/${thumbnailId}`} alt={item.media?.[0]?.altText || item.title} /> : <div className="admin-content-thumb empty">无图片</div>}{item.media && item.media.length > 1 ? <span className="media-count">{item.media.length} 张</span> : null}</div>
             <div className="admin-content-copy"><h3>{item.title}</h3><p>{item.summary || "暂无摘要"}</p><div className="chips"><span className="chip">{item.status}</span><span className={item.visibility === "public" ? "chip cyan" : "chip coral"}>{item.visibility}</span><span className={item.metadata.isAiUsable === true ? "chip lime" : "chip coral"}>{item.metadata.isAiUsable === true ? "允许 AI 文本引用" : "不供 AI 使用"}</span></div></div>
             <div className="admin-row-actions"><button className="button secondary" type="button" onClick={() => startEdit(item)}><Pencil size={15} />编辑</button><button className="button coral" type="button" onClick={() => void remove(item)}><Trash2 size={15} />删除</button></div>
           </article>;

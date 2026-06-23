@@ -50,6 +50,13 @@
       "when": 1781764233624,
       "tag": "0006_brave_sway",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1782146952336,
+      "tag": "0007_lying_mephistopheles",
+      "breakpoints": true
     }
   ]
 }
